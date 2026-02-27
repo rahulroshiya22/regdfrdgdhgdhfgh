@@ -1,0 +1,18 @@
+{
+  "users": {
+    "5904403234": {
+      "lang": "en",
+      "auto_delete": 0,
+      "banned": false,
+      "joined": "2026-02-28 00:22:45.646403"
+    }
+  },
+  "stats": {
+    "total_dl": 0,
+    "total_users": 1
+  },
+  "settings": {
+    "maintenance": false,
+    "approval_mode": true
+  }
+}
