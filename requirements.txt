@@ -1,2 +1,6 @@
-python-telegram-bot==21.10
-yt-dlp==2025.1.26
+pyrogram
+tgcrypto
+yt-dlp
+psutil
+requests
+aiohttp

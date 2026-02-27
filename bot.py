@@ -31,10 +31,10 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=lo
 logger = logging.getLogger(__name__)
 
 # ━━━ CONFIG ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BOT_TOKEN = "6546580342:AAEZSnzj9o5W7goZH5TeLBSlRVUIbN_YdYc"
-API_ID = 6
-API_HASH = "eb06d4abfb49dc3eeb1aeb98ae0f581e"
-ADMIN_ID = "5904403234"
+BOT_TOKEN = os.getenv("BOT_TOKEN", "6546580342:AAEZSnzj9o5W7goZH5TeLBSlRVUIbN_YdYc")
+API_ID = int(os.getenv("API_ID", 6))
+API_HASH = os.getenv("API_HASH", "eb06d4abfb49dc3eeb1aeb98ae0f581e")
+ADMIN_ID = os.getenv("ADMIN_ID", "5904403234")
 
 DOWNLOAD_DIR = Path("downloads")
 DOWNLOAD_DIR.mkdir(exist_ok=True)
@@ -1103,5 +1103,28 @@ async def on_url(_, msg: Message):
 if __name__ == "__main__":
     print(f"[*] {BRAND} v{VER}")
     print(f"[*] Sites: {len(SITES)} | ffmpeg: {'Y' if HAS_FFMPEG else 'N'} | aria2: {'Y' if HAS_ARIA2 else 'N'}")
-    print(f"[OK] Running...")
-    bot.run()
+    
+    from aiohttp import web
+    import os
+    
+    async def handle(request):
+        return web.Response(text=f"{BRAND} Bot is online and running.")
+        
+    async def start_webserver():
+        app = web.Application()
+        app.router.add_get('/', handle)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        port = int(os.environ.get("PORT", 8080))
+        site = web.TCPSite(runner, '0.0.0.0', port)
+        await site.start()
+        print(f"[OK] Web server started on port {port}")
+    
+    async def main():
+        await start_webserver()
+        await bot.start()
+        print(f"[OK] Telegram Bot fully operational...")
+        await idle()
+        await bot.stop()
+        
+    bot.run(main())
