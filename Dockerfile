@@ -14,5 +14,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy bot code
 COPY . .
 
-# Run the bot
-CMD ["python", "bot.py"]
+# Run the bot with unbuffered output so Render logs work in real-time
+CMD ["python", "-u", "bot.py"]
