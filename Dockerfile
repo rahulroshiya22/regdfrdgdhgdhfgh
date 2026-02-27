@@ -2,9 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install necessary system dependencies (ffmpeg for video merging, aria2 for fast downloads)
+# Install necessary system dependencies (ffmpeg for video merging, aria2 for fast downloads, build-essential for tgcrypto)
 RUN apt-get update && \
-    apt-get install -y ffmpeg aria2 && \
+    apt-get install -y ffmpeg aria2 build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Python requirements
