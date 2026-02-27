@@ -23,7 +23,7 @@ if sys.platform == "win32":
             os.environ["PATH"] = p + ";" + os.environ.get("PATH", "")
 
 import yt_dlp
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.enums import ParseMode
 
