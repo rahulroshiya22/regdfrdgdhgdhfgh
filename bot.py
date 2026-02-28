@@ -117,6 +117,22 @@ SITES = {
     "porn00":     {"icon": "0️⃣", "name": "Porn00",    "domains": [r"porn00\.org"]},
     "pornone":    {"icon": "1️⃣", "name": "PornOne",   "domains": [r"pornone\.com"]},
     "fux":        {"icon": "🔥", "name": "FUX",       "domains": [r"fux\.com"]},
+    # ── Extra Premium Sites (NEW) ──
+    "pornhd":     {"icon": "📺", "name": "PornHD",    "domains": [r"pornhd\.com"]},
+    "gotporn":    {"icon": "🎯", "name": "GotPorn",   "domains": [r"gotporn\.com"]},
+    "sexu":       {"icon": "💋", "name": "Sexu",      "domains": [r"sexu\.com"]},
+    "bravotube":  {"icon": "👏", "name": "BravoTube", "domains": [r"bravotube\.net"]},
+    "iwara":      {"icon": "🎌", "name": "IWara",     "domains": [r"iwara\.tv"]},
+    "rule34video":{"icon": "🎨", "name": "Rule34Video","domains": [r"rule34video\.com"]},
+    "tnaflix":    {"icon": "📼", "name": "TnaFlix",   "domains": [r"tnaflix\.com"]},
+    "empflix":    {"icon": "🎬", "name": "EMPFlix",   "domains": [r"empflix\.com"]},
+    "pornez":     {"icon": "🔷", "name": "Pornez",    "domains": [r"pornez\.net"]},
+    "peekvids":   {"icon": "👀", "name": "PeekVids",  "domains": [r"peekvids\.com"]},
+    "playvids":   {"icon": "▶️", "name": "PlayVids",  "domains": [r"playvids\.com"]},
+    "alohatube":  {"icon": "🌺", "name": "AlohaTube", "domains": [r"alohatube\.com"]},
+    "xbabe":      {"icon": "💄", "name": "XBabe",     "domains": [r"xbabe\.com"]},
+    "xtapes":     {"icon": "📀", "name": "Xtapes",    "domains": [r"xtapes\.to"]},
+    "sxyprn":     {"icon": "🔞", "name": "SxyPrn",    "domains": [r"sxyprn\.com", r"sxypix\.com"]},
 }
 
 ALL_DOMAINS = []
@@ -1191,7 +1207,56 @@ def get_admin_main():
          InlineKeyboardButton("⚡ Advanced", callback_data="adm|nav|advanced")],
         [InlineKeyboardButton("☁️ Backup Now", callback_data="adm|dobackup"),
          InlineKeyboardButton("🔄 Update yt-dlp", callback_data="adm|updateytdlp")],
+        [InlineKeyboardButton("💡 Suggestions", callback_data="adm|nav|suggestions")],
         [InlineKeyboardButton("🔙 Exit Panel", callback_data="nav|start")]
+    ])
+    return t, kb
+
+def get_admin_suggestions():
+    t = (
+        f"💡 <b>Feature Suggestions</b>\n\n"
+        f"<i>Ideas to grow your bot and users:</i>\n\n"
+        f"<blockquote>"
+        f"<b>1. 📊 Leaderboard</b>\n"
+        f"Show top 10 users by downloads.\n"
+        f"Motivates users to engage more.\n\n"
+        f"<b>2. 🌐 Multi-Language</b>\n"
+        f"Add Hindi, Spanish, Arabic support.\n"
+        f"Reach a global audience.\n\n"
+        f"<b>3. 📱 Playlist Download</b>\n"
+        f"Detect playlists, let users pick\n"
+        f"multiple videos at once.\n\n"
+        f"<b>4. 💰 Telegram Stars Payment</b>\n"
+        f"Sell VIP access via Telegram Stars.\n"
+        f"No external payment gateway needed."
+        f"</blockquote>\n\n"
+        f"<blockquote>"
+        f"<b>5. 🔔 Channel Auto-Post</b>\n"
+        f"Auto-post popular downloads to\n"
+        f"your Telegram channel for growth.\n\n"
+        f"<b>6. 🎨 Custom Watermark</b>\n"
+        f"Add your brand watermark on all\n"
+        f"downloaded videos automatically.\n\n"
+        f"<b>7. 📈 Weekly Growth Report</b>\n"
+        f"Auto-send charts showing user\n"
+        f"growth, downloads, peak hours.\n\n"
+        f"<b>8. 🔄 Re-upload / Mirror</b>\n"
+        f"Users forward a TG video, bot\n"
+        f"re-uploads at different quality."
+        f"</blockquote>\n\n"
+        f"<blockquote>"
+        f"<b>9. ⭐ User Feedback System</b>\n"
+        f"Let users rate their experience.\n"
+        f"Shows satisfaction metrics in admin.\n\n"
+        f"<b>10. 🎯 Favorite Sites</b>\n"
+        f"Let users save preferred platforms\n"
+        f"for quick access shortcuts."
+        f"</blockquote>\n\n"
+        f"<i>Contact developer to implement:</i>\n"
+        f"<a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
+    )
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back to Dash", callback_data="adm|nav|main")]
     ])
     return t, kb
 
@@ -1562,25 +1627,26 @@ def get_start_menu():
 
 def get_settings_menu(uid):
     u = get_user(uid)
-    del_time = u.get("auto_delete", 60)
-    del_icons = {10: "▫️", 60: "▫️", 0: "▫️"}
-    del_icons[del_time] = "✅"
+    del_time = db["settings"].get("auto_delete_default", 60)
+    is_vip = u.get("vip", False)
+    check_vip_expiry(int(uid))
+    vip_exp = u.get("vip_expires", "")[:10] if u.get("vip_expires") else "—"
     
     t = (
         f"⚙️ <b>𝗬𝗼𝘂𝗿 𝗦𝗲𝘁𝘁𝗶𝗻𝗴𝘀</b>\n\n"
         f"<blockquote>"
         f"👤 <b>User ID:</b> <code>{uid}</code>\n"
-        f"📅 <b>Joined:</b> <code>{u['joined'].split()[0]}</code>"
+        f"📅 <b>Joined:</b> <code>{u['joined'].split()[0]}</code>\n"
+        f"👑 <b>VIP:</b> {'✅ Active' if is_vip else '❌ Inactive'}\n"
+        f"📅 <b>Expires:</b> {vip_exp}"
         f"</blockquote>\n\n"
-        f"🗑 <b>𝗔𝘂𝘁𝗼-𝗗𝗲𝗹𝗲𝘁𝗲 𝗠𝗲𝘀𝘀𝗮𝗴𝗲𝘀:</b>\n"
-        f"<i>Keep your chat clean — messages auto-delete after download.</i>\n\n"
-        f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
-        f"<b>🛠 𝗕𝗼𝘁 𝗺𝗮𝗱𝗲 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
+        f"<blockquote>"
+        f"🗑 <b>Auto-Delete:</b> {del_time}s after upload\n"
+        f"<i>⚠️ Forward videos to Saved Messages before they are deleted!</i>"
+        f"</blockquote>\n\n"
+        f"<b>⚡ Powered by</b> <a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
     )
     kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton(f"{del_icons[10]} 10 Sec", callback_data="set|del|10"),
-         InlineKeyboardButton(f"{del_icons[60]} 60 Sec", callback_data="set|del|60")],
-        [InlineKeyboardButton(f"{del_icons[0]} Disable Auto-Delete", callback_data="set|del|0")],
         [InlineKeyboardButton("🔙 Back to Menu", callback_data="nav|start")]
     ])
     return t, kb
@@ -1657,6 +1723,13 @@ def get_sites_menu():
         f"• HDZog · NuVid · VPorn · 4Tube\n"
         f"• Thumbzilla · PornDig · 3Movs · Fansly\n"
         f"• Porn00 · PornOne · FUX</blockquote>\n\n"
+        
+        f"<blockquote><b>Extra Premium Sites</b>\n"
+        f"• PornHD · GotPorn · Sexu · BravoTube\n"
+        f"• IWara · Rule34Video · TnaFlix\n"
+        f"• EMPFlix · Pornez · PeekVids\n"
+        f"• PlayVids · AlohaTube · XBabe\n"
+        f"• Xtapes · SxyPrn</blockquote>\n\n"
         
         f"<b>💡 Get Access</b>\n"
         f"<i>To upgrade to VIP, use the following commands:</i>\n"
@@ -2018,6 +2091,7 @@ async def on_cb(_, cb: CallbackQuery):
                 elif page == "multiadmin": t, kb = get_admin_multiadmin()
                 elif page == "vipmanager": t, kb = get_admin_vipmanager()
                 elif page == "advanced": t, kb = get_admin_advanced()
+                elif page == "suggestions": t, kb = get_admin_suggestions()
                 else: t, kb = get_admin_main()
                 await cb.message.edit_text(t, parse_mode=ParseMode.HTML, reply_markup=kb)
         except: pass
@@ -2655,12 +2729,13 @@ async def on_cb(_, cb: CallbackQuery):
             db["users"][uid_s]["history"] = db["users"][uid_s]["history"][-50:]
         save_data(db)
 
-        delay = db["users"][str(cb.from_user.id)].get("auto_delete", 60)
+        delay = db["settings"].get("auto_delete_default", 60)
         
         if delay > 0:
             await status.edit_text(
                 f"✅ <b>Done!</b> {sz(fsize)} in {time.time()-t0:.0f}s\n"
-                f"⏳ <i>Auto-deleting in {delay}s</i>",
+                f"⏳ <i>Auto-deleting in {delay}s</i>\n"
+                f"💡 <i>Forward to Saved Messages to keep!</i>",
                 parse_mode=ParseMode.HTML)
             asyncio.create_task(auto_delete(status, video_msg, delay=delay))
         else:
