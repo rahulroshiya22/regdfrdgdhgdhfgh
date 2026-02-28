@@ -1170,7 +1170,7 @@ async def cmd_start(client, msg: Message):
         if not await enforce_force_channel(client, msg): return
         t, kb = get_start_menu()
         if BANNER.exists():
-            await msg.reply_photo(str(BANNER), caption=t, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
+            await msg.reply_photo(str(BANNER), caption=t, parse_mode=ParseMode.HTML, reply_markup=kb)
         else:
             await msg.reply_text(t, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
     except Exception as e:
@@ -1825,9 +1825,7 @@ async def on_cb(_, cb: CallbackQuery):
             parse_mode=ParseMode.HTML,
             supports_streaming=True,
             thumb=thumb_path if thumb_path and os.path.exists(thumb_path) else None,
-            file_name=f"{vid_title or 'video'}.mp4" if vid_title else None,
             progress=up_prog,
-            disable_web_page_preview=True,
         )
         
         # Forward to dump channels
@@ -2074,7 +2072,8 @@ if __name__ == "__main__":
         # Infinite retry loop — bot NEVER stops on Render
         while True:
             try:
-                await bot.start()
+                if not bot.is_connected:
+                    await bot.start()
                 print(f"[OK] Telegram Bot fully operational...")
                 
                 # Notify admin that bot started
