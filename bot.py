@@ -2049,12 +2049,18 @@ if __name__ == "__main__":
     from aiohttp import web
     import os
     
+    RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL", "")
+    
     async def handle(request):
         return web.Response(text=f"{BRAND} Bot is online and running.")
+    
+    async def health(request):
+        return web.Response(text="OK")
         
     async def start_webserver():
         app = web.Application()
         app.router.add_get('/', handle)
+        app.router.add_get('/health', health)
         runner = web.AppRunner(app)
         await runner.setup()
         port = int(os.environ.get("PORT", 8080))
@@ -2062,12 +2068,30 @@ if __name__ == "__main__":
         await site.start()
         print(f"[OK] Web server started on port {port}")
     
+    async def keep_alive():
+        """Self-ping every 4 minutes to prevent Render free tier spin-down."""
+        import aiohttp
+        ping_url = RENDER_URL or f"http://localhost:{os.environ.get('PORT', 8080)}"
+        ping_url = ping_url.rstrip("/") + "/health"
+        print(f"[OK] Keep-alive pinger started → {ping_url}")
+        while True:
+            await asyncio.sleep(240)  # 4 minutes
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(ping_url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                        logger.info(f"[KEEP-ALIVE] Ping {resp.status}")
+            except Exception as e:
+                logger.warning(f"[KEEP-ALIVE] Ping failed: {e}")
+    
     async def main():
         # Set global asyncio error handler — bot never dies
         loop = asyncio.get_event_loop()
         loop.set_exception_handler(global_exception_handler)
         
         await start_webserver()
+        
+        # Start self-ping to keep Render alive
+        asyncio.create_task(keep_alive())
         
         # Infinite retry loop — bot NEVER stops on Render
         while True:
