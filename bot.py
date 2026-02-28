@@ -371,16 +371,55 @@ def load_data():
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             d = json.load(f)
+            # Ensure all sections exist
+            d.setdefault("users", {})
+            d.setdefault("stats", {"total_dl": 0, "total_users": 0})
+            d.setdefault("settings", {})
             # Merge any missing keys from defaults
             for k, v in DEFAULT_SETTINGS.items():
                 d["settings"].setdefault(k, v)
+            d["stats"]["total_users"] = len(d["users"])
             return d
     except:
         return {"users": {}, "stats": {"total_dl": 0, "total_users": 0}, "settings": dict(DEFAULT_SETTINGS)}
 
+_save_counter = 0
+
 def save_data(d):
+    global _save_counter
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(d, f, indent=2)
+    _save_counter += 1
+    # Cloud backup every 5 saves (avoids rate limits)
+    if _save_counter % 5 == 0:
+        try: asyncio.create_task(cloud_backup())
+        except: pass
+
+async def cloud_backup():
+    """Upload data.json to admin chat for persistence across redeployments."""
+    try:
+        if DATA_FILE.exists():
+            await bot.send_document(
+                int(ADMIN_ID),
+                document=str(DATA_FILE),
+                caption=f"☁️ <b>Auto Backup</b>\n<code>{datetime.now().strftime('%Y-%m-%d %H:%M')}</code>\n<i>Users: {len(db['users'])} | DL: {db['stats'].get('total_dl',0)}</i>",
+                parse_mode=ParseMode.HTML,
+                file_name="data.json"
+            )
+    except Exception as e:
+        logger.warning(f"Cloud backup failed: {e}")
+
+async def restore_data_from_telegram():
+    """Download latest data.json from admin chat on startup."""
+    try:
+        async for msg in bot.get_chat_history(int(ADMIN_ID), limit=50):
+            if msg.document and msg.document.file_name == "data.json":
+                path = await msg.download(file_name=str(DATA_FILE))
+                logger.info(f"[RESTORE] Data restored from Telegram backup: {path}")
+                return True
+    except Exception as e:
+        logger.warning(f"Cloud restore failed: {e}")
+    return False
 
 db = load_data()
 
@@ -435,28 +474,109 @@ async def check_force_channel(client, uid) -> bool:
 async def check_user(_, client_or_dummy, query):
     if not query.from_user: return False
     uid = query.from_user.id
+    
+    # ── Group Management Check ──
+    if isinstance(query, Message) and query.chat and query.chat.type in ("group", "supergroup"):
+        allowed = db["settings"].get("allowed_groups", [])
+        if allowed and str(query.chat.id) not in allowed:
+            try:
+                denied_txt = (
+                    f"<b>🚫 𝗚𝗿𝗼𝘂𝗽 𝗡𝗼𝘁 𝗔𝘂𝘁𝗵𝗼𝗿𝗶𝘇𝗲𝗱</b>\n\n"
+                    f"<blockquote>"
+                    f"This group is not approved by admin.\n"
+                    f"Bot only works in authorized groups.\n\n"
+                    f"Group ID: <code>{query.chat.id}</code>"
+                    f"</blockquote>\n\n"
+                    f"<blockquote>"
+                    f"Ask admin to add this group.\n"
+                    f"Contact <a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
+                    f"</blockquote>\n\n"
+                    f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
+                    f"<b>⚡ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
+                )
+                if BANNER.exists():
+                    await query.reply_photo(str(BANNER), caption=denied_txt, parse_mode=ParseMode.HTML)
+                else:
+                    await query.reply_text(denied_txt, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+            except: pass
+            return False
+    
     u = get_user(uid)
     
+    # ── Banned Check ──
     if u.get("banned"):
         try:
-            if isinstance(query, Message): await query.reply_text("❌ You are banned from using this bot.")
-            elif isinstance(query, CallbackQuery): await query.answer("❌ You are banned.", show_alert=True)
+            banned_txt = (
+                f"<b>🚫 𝗔𝗰𝗰𝗲𝘀𝘀 𝗗𝗲𝗻𝗶𝗲𝗱</b>\n\n"
+                f"<blockquote>"
+                f"Your account has been <b>banned</b> from\n"
+                f"using this bot.\n\n"
+                f"User ID: <code>{uid}</code>"
+                f"</blockquote>\n\n"
+                f"<blockquote>"
+                f"If you think this is a mistake, contact:\n"
+                f"<a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
+                f"</blockquote>\n\n"
+                f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
+                f"<b>⚡ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
+            )
+            if isinstance(query, Message):
+                if BANNER.exists():
+                    await query.reply_photo(str(BANNER), caption=banned_txt, parse_mode=ParseMode.HTML)
+                else:
+                    await query.reply_text(banned_txt, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+            elif isinstance(query, CallbackQuery):
+                await query.answer("🚫 You are banned from this bot.", show_alert=True)
         except: pass
         return False
         
+    # ── Pending Approval Check ──
     if not u.get("approved", True) and not is_admin(uid):
         try:
-            txt = "🔒 <b>Access Denied</b>\nThis is a private bot. Your account is pending admin approval."
-            if isinstance(query, Message): await query.reply_text(txt, parse_mode=ParseMode.HTML)
-            elif isinstance(query, CallbackQuery): await query.answer("Pending Admin Approval.", show_alert=True)
+            pending_txt = (
+                f"<b>⏳ 𝗔𝗽𝗽𝗿𝗼𝘃𝗮𝗹 𝗣𝗲𝗻𝗱𝗶𝗻𝗴</b>\n\n"
+                f"<blockquote>"
+                f"🔒 This is a <b>private bot</b>.\n"
+                f"Your account is awaiting admin approval.\n\n"
+                f"Your ID: <code>{uid}</code>"
+                f"</blockquote>\n\n"
+                f"<blockquote>"
+                f"👇 Contact admin to get approved:\n"
+                f"<a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
+                f"</blockquote>\n\n"
+                f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
+                f"<b>⚡ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
+            )
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("💬 Contact @IRONMAXPRO", url="https://t.me/IRONMAXPRO")]
+            ])
+            if isinstance(query, Message):
+                if BANNER.exists():
+                    await query.reply_photo(str(BANNER), caption=pending_txt, parse_mode=ParseMode.HTML, reply_markup=kb)
+                else:
+                    await query.reply_text(pending_txt, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
+            elif isinstance(query, CallbackQuery):
+                await query.answer("⏳ Your account is pending admin approval.", show_alert=True)
         except: pass
         return False
         
+    # ── Maintenance Check ──
     if db["settings"].get("maintenance") and not is_admin(uid):
         try:
-            txt = "🛠 <b>Bot is under maintenance.</b>\nWe are upgrading the servers. Please try again in a few minutes!"
-            if isinstance(query, Message): await query.reply_text(txt, parse_mode=ParseMode.HTML)
-            elif isinstance(query, CallbackQuery): await query.answer("🛠 Maintenance Mode Active. Try again later.", show_alert=True)
+            maint_txt = (
+                f"<b>🛠 𝗠𝗮𝗶𝗻𝘁𝗲𝗻𝗮𝗻𝗰𝗲 𝗠𝗼𝗱𝗲</b>\n\n"
+                f"<blockquote>"
+                f"Bot is currently under maintenance.\n"
+                f"We are upgrading servers.\n\n"
+                f"Please try again in a few minutes!"
+                f"</blockquote>\n\n"
+                f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
+                f"<b>⚡ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
+            )
+            if isinstance(query, Message):
+                await query.reply_text(maint_txt, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+            elif isinstance(query, CallbackQuery):
+                await query.answer("🛠 Maintenance Mode Active. Try again later.", show_alert=True)
         except: pass
         return False
         
@@ -514,6 +634,13 @@ async def cmd_admin(_, msg: Message):
     if not is_admin(msg.from_user.id): return
     t, kb = get_admin_main()
     await msg.reply_text(t, parse_mode=ParseMode.HTML, reply_markup=kb)
+
+@bot.on_message(filters.command("backup") & user_filter)
+async def cmd_backup(_, msg: Message):
+    if not is_admin(msg.from_user.id): return
+    await msg.reply_text("☁️ <b>Creating backup...</b>", parse_mode=ParseMode.HTML)
+    await cloud_backup()
+    await msg.reply_text("✅ <b>Backup saved to Telegram!</b>\n<i>Data will survive redeployment.</i>", parse_mode=ParseMode.HTML)
 
 @bot.on_message(user_filter, group=-1)
 async def admin_state_handler(client, msg: Message):
@@ -2098,6 +2225,18 @@ if __name__ == "__main__":
             try:
                 if not bot.is_connected:
                     await bot.start()
+                
+                # Restore data from Telegram if local data is empty (fresh deploy)
+                global db
+                if len(db["users"]) == 0:
+                    print("[*] Fresh deploy detected — restoring data from Telegram...")
+                    restored = await restore_data_from_telegram()
+                    if restored:
+                        db = load_data()
+                        print(f"[OK] Data restored! Users: {len(db['users'])}, DL: {db['stats'].get('total_dl',0)}")
+                    else:
+                        print("[*] No backup found — starting fresh.")
+                
                 print(f"[OK] Telegram Bot fully operational...")
                 
                 # Notify admin that bot started
