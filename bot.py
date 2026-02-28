@@ -1530,27 +1530,25 @@ def get_start_menu():
         f"<blockquote>"
         f"📤 Up to <b>2GB</b> direct upload to Telegram\n"
         f"🎯 <b>Exact quality</b> — you pick, we deliver\n"
-        f"� <b>aria2 + 16x parallel</b> max speed\n"
-        f"� Live progress · ❌ Cancel anytime\n"
-        f"� Direct download links available"
-        f"</blockquote>\n\n"
-        f"<blockquote>"
-        f"🌐 <b>30+ Supported Platforms</b>\n"
-        f"� Instagram  🔷 Facebook  🔶 xHamster\n"
-        f"🟠 PornHub  � XVideos  🟡 XNXX\n"
-        f"<i>+ 25 more sites...</i>"
+        f"⚡ <b>aria2 + 16x parallel</b> max speed\n"
+        f"🌐 <b>{len(SITES)}+</b> supported platforms"
         f"</blockquote>\n\n"
         f"📎 <b>𝗣𝗮𝘀𝘁𝗲 𝗮𝗻𝘆 𝘃𝗶𝗱𝗲𝗼 𝗹𝗶𝗻𝗸 𝘁𝗼 𝘀𝘁𝗮𝗿𝘁 ↓</b>\n\n"
         f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
-        f"<b>🛠 𝗕𝗼𝘁 𝗺𝗮𝗱𝗲 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
+        f"<b>⚡ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
     )
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("⚙️ Settings", callback_data="nav|settings"),
          InlineKeyboardButton("🌐 Supported Sites", callback_data="nav|sites")],
         [InlineKeyboardButton("📖 How to Use", callback_data="nav|help"),
          InlineKeyboardButton("ℹ️ About Bot", callback_data="nav|about")],
+        [InlineKeyboardButton("🔗 Referral", callback_data="nav|referral"),
+         InlineKeyboardButton("🎟 Promo Code", callback_data="nav|promo")],
+        [InlineKeyboardButton("👑 VIP Info", callback_data="nav|vip"),
+         InlineKeyboardButton("📊 My Stats", callback_data="nav|mystats")],
     ])
     return t, kb
+
 
 def get_settings_menu(uid):
     u = get_user(uid)
@@ -1581,67 +1579,112 @@ def get_help_menu():
     t = (
         f"<b>📖 𝗛𝗼𝘄 𝘁𝗼 𝗨𝘀𝗲 {BRAND}</b>\n\n"
         f"<blockquote>"
+        f"<b>📥 Download Steps:</b>\n"
         f"𝟭. Send or paste any video URL\n"
-        f"𝟮. Bot fetches video info with thumbnail\n"
-        f"𝟯. Choose your quality from available list\n"
-        f"𝟰. Pick delivery — Telegram or Direct Link\n"
-        f"𝟱. Video arrives directly in chat!"
+        f"𝟮. Bot fetches info + thumbnail\n"
+        f"𝟯. Choose quality from list\n"
+        f"𝟰. Pick: Telegram upload or Direct Link\n"
+        f"𝟱. Video arrives in chat!"
         f"</blockquote>\n\n"
         f"<blockquote>"
-        f"⚡ <b>Speed:</b> aria2 + 16 parallel streams\n"
-        f"📤 <b>Limit:</b> 2GB per file\n"
-        f"🎯 <b>Quality:</b> You choose exact resolution\n"
-        f"⏳ <b>Auto-Clean:</b> Messages delete after download"
+        f"<b>📋 Commands:</b>\n"
+        f"/start — Main menu\n"
+        f"/help — This guide\n"
+        f"/settings — Your preferences\n"
+        f"/referral — Your referral link\n"
+        f"/promo CODE — Redeem promo\n"
+        f"/mystats — Your download stats\n"
+        f"/history — Last 10 downloads"
         f"</blockquote>\n\n"
-        f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
-        f"<b>🛠 𝗕𝗼𝘁 𝗺𝗮𝗱𝗲 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
+        f"<blockquote>"
+        f"<b>💡 Tips:</b>\n"
+        f"• Messages auto-delete (configurable)\n"
+        f"• Cancel downloads anytime with ❌\n"
+        f"• Files over 2GB get a direct link\n"
+        f"• VIP unlocks 60+ adult platforms"
+        f"</blockquote>\n\n"
+        f"<b>⚡ Powered by</b> <a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
     )
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Menu", callback_data="nav|start")]])
     return t, kb
 
 def get_sites_menu():
-    free_social = [s for k, s in SITES.items() if k in FREE_SITES and k != "xhamster"]
-    free_adult = [s for k, s in SITES.items() if k == "xhamster"]
-    vip_tube = [s for k, s in SITES.items() if k in {"pornhub","xvideos","xnxx","redtube","youporn","spankbang","eporner","tube8","txxx","pornflip","porntube","sunporno","hellporno","alphaporno","zenporn","pornoxo","lovehomeporn","nubilesporn","manyvids","moviefap","pornbox","porntop"}]
-    vip_cam = [s for k, s in SITES.items() if k in {"chaturbate","stripchat","bongacams","cam4","camsoda","myfreecams","livejasmin"}]
-    vip_new = [s for k, s in SITES.items() if k in {"youjizz","drtuber","porntrex","beeg","hdzog","nuvid","vporn","4tube","thumbzilla","porndig","3movs","fansly","porn00","pornone","fux"}]
-    
-    def fmt_row(sites, per_line=3):
-        lines = []
-        for i in range(0, len(sites), per_line):
-            chunk = sites[i:i+per_line]
-            lines.append(" · ".join(f"{s['icon']} {s['name']}" for s in chunk))
-        return "\n".join(lines)
-
     t = (
-        f"<b>🌐 𝗦𝘂𝗽𝗽𝗼𝗿𝘁𝗲𝗱 𝗣𝗹𝗮𝘁𝗳𝗼𝗿𝗺𝘀</b>\n"
-        f"<i>Total: <b>{len(SITES)}</b> platforms</i>\n\n"
+        f"<b>🌐 Supported Platforms</b>\n"
+        f"<i>Total: <b>{len(SITES)}</b> Sites Available</i>\n\n"
         
-        f"<blockquote><b>📱 Social Media</b>  <i>FREE ✅</i>\n"
-        f"{fmt_row(free_social, 3)}</blockquote>\n\n"
+        f"<b>🔓 FREE TIER</b>\n"
+        f"<i>Unlimited access for all users:</i>\n\n"
         
-        f"<blockquote><b>🔶 Adult — Free Tier</b>  <i>FREE ✅</i>\n"
-        f"{fmt_row(free_adult, 3)}</blockquote>\n\n"
+        f"<blockquote><b>Social Media</b>\n"
+        f"• Instagram · Facebook · YouTube\n"
+        f"• TikTok · X (Twitter) · Reddit\n"
+        f"• Pinterest · Vimeo · Dailymotion\n"
+        f"• Twitch · Snapchat · Threads\n"
+        f"• Tumblr · Bilibili · Likee</blockquote>\n\n"
         
-        f"<blockquote><b>🎬 Tube Sites</b>  <i>VIP 👑</i>\n"
-        f"{fmt_row(vip_tube, 3)}</blockquote>\n\n"
+        f"<blockquote><b>Adult Content</b>\n"
+        f"• xHamster</blockquote>\n\n"
         
-        f"<blockquote><b>🎥 Live Cam Sites</b>  <i>VIP 👑</i>\n"
-        f"{fmt_row(vip_cam, 3)}</blockquote>\n\n"
+        f"<b>👑 VIP PREMIUM</b>\n"
+        f"<i>Subscription required for these sites:</i>\n\n"
         
-        f"<blockquote><b>🆕 More Adult Sites</b>  <i>VIP 👑</i>\n"
-        f"{fmt_row(vip_new, 3)}</blockquote>\n\n"
+        f"<blockquote><b>Major Tube Sites</b>\n"
+        f"• PornHub · XVideos · XNXX\n"
+        f"• RedTube · YouPorn · SpankBang\n"
+        f"• Eporner · Tube8 · TXXX\n"
+        f"• PornFlip · PornTube · SunPorno\n"
+        f"• HellPorno · AlphaPorno · ZenPorn\n"
+        f"• PornoXO · LoveHomePorn · NubilesPorn\n"
+        f"• ManyVids · MovieFap · PornBox · PornTop</blockquote>\n\n"
         
-        f"<blockquote>"
-        f"✅ <b>FREE</b> = All users can download\n"
-        f"👑 <b>VIP</b> = Premium access needed\n\n"
-        f"💡 Get VIP via /referral or /promo"
-        f"</blockquote>\n\n"
+        f"<blockquote><b>Live Cam Platforms</b>\n"
+        f"• Chaturbate · Stripchat · BongaCams\n"
+        f"• CAM4 · CamSoda · MyFreeCams · LiveJasmin</blockquote>\n\n"
         
-        f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
-        f"<b>⚡ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
+        f"<blockquote><b>Additional Premium Sites</b>\n"
+        f"• YouJizz · DrTuber · PornTrex · Beeg\n"
+        f"• HDZog · NuVid · VPorn · 4Tube\n"
+        f"• Thumbzilla · PornDig · 3Movs · Fansly\n"
+        f"• Porn00 · PornOne · FUX</blockquote>\n\n"
+        
+        f"<b>💡 Get Access</b>\n"
+        f"<i>To upgrade to VIP, use the following commands:</i>\n"
+        f"• /referral — Earn VIP by inviting friends\n"
+        f"• /promo — View current discount offers\n\n"
+        
+        f"<b>⚡ Powered by</b> <a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
     )
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Menu", callback_data="nav|start")]])
+    return t, kb
+
+def get_vip_menu(uid):
+    u = db["users"].get(str(uid), {})
+    check_vip_expiry(uid)
+    is_vip = u.get("vip", False)
+    exp = u.get("vip_expires", "")[:10] if u.get("vip_expires") else "—"
+    refs = len(u.get("referrals", []))
+    ref_code = generate_referral_code(uid)
+    t = (
+        f"<b>👑 𝗩𝗜𝗣 𝗔𝗰𝗰𝗲𝘀𝘀</b>\n\n"
+        f"<blockquote>"
+        f"<b>Status:</b> {'✅ Active' if is_vip else '❌ Inactive'}\n"
+        f"<b>Expires:</b> {exp}\n"
+        f"<b>Referrals:</b> {refs}"
+        f"</blockquote>\n\n"
+        f"<b>🔓 Free Sites:</b> Social Media + xHamster\n"
+        f"<b>👑 VIP Sites:</b> All 60+ adult platforms\n\n"
+        f"<blockquote><b>How to get VIP:</b>\n"
+        f"1️⃣ <b>Referral:</b> Share your link, earn {db['settings'].get('referral_vip_days',7)} VIP days per friend\n"
+        f"2️⃣ <b>Promo Code:</b> Use /promo CODE to redeem\n"
+        f"3️⃣ <b>Contact Admin:</b> @IRONMAXPRO</blockquote>\n\n"
+        f"🔗 <b>Your Link:</b> <code>https://t.me/TURBOGRABONTG_BOT?start=ref_{ref_code}</code>\n\n"
+        f"<b>⚡ Powered by</b> <a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
+    )
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("💬 Contact Admin", url="https://t.me/IRONMAXPRO")],
+        [InlineKeyboardButton("🔙 Back to Menu", callback_data="nav|start")]
+    ])
     return t, kb
 
 def get_about_menu():
@@ -1811,6 +1854,23 @@ async def on_cb(_, cb: CallbackQuery):
     d = cb.data
 
     # ── Navigation Callbacks ──
+    # ── Force Channel Verify ──
+    if d == "fc|check":
+        uid = cb.from_user.id
+        joined = await check_force_channel(_, uid)
+        if joined:
+            await cb.answer("✅ Verified! Welcome!", show_alert=True)
+            try: await cb.message.delete()
+            except: pass
+            t, kb = get_start_menu()
+            if BANNER.exists():
+                await cb.message.reply_to_message.reply_photo(str(BANNER), caption=t, parse_mode=ParseMode.HTML, reply_markup=kb) if cb.message.reply_to_message else await bot.send_message(uid, t, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
+            else:
+                await bot.send_message(uid, t, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
+        else:
+            await cb.answer("❌ You haven't joined the channel yet! Join first, then try again.", show_alert=True)
+        return
+
     if d.startswith("nav|"):
         page = d.split("|")[1]
         try:
@@ -1824,6 +1884,56 @@ async def on_cb(_, cb: CallbackQuery):
                 t, kb = get_settings_menu(str(cb.from_user.id))
             elif page == "about":
                 t, kb = get_about_menu()
+            elif page == "vip":
+                t, kb = get_vip_menu(cb.from_user.id)
+            elif page == "referral":
+                uid = cb.from_user.id
+                code = generate_referral_code(uid)
+                u = db["users"].get(str(uid), {})
+                refs = len(u.get("referrals", []))
+                t = (
+                    f"<b>🔗 𝗬𝗼𝘂𝗿 𝗥𝗲𝗳𝗲𝗿𝗿𝗮𝗹 𝗟𝗶𝗻𝗸</b>\n\n"
+                    f"<blockquote>Share this link with friends!\n"
+                    f"Earn <b>{db['settings'].get('referral_vip_days',7)} VIP days</b> per referral.</blockquote>\n\n"
+                    f"🔗 <code>https://t.me/TURBOGRABONTG_BOT?start=ref_{code}</code>\n\n"
+                    f"<blockquote>👥 Your Referrals: <b>{refs}</b>\n"
+                    f"👑 VIP: {'✅ Active' if u.get('vip') else '❌ Inactive'}</blockquote>\n\n"
+                    f"<b>⚡ Powered by</b> <a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
+                )
+                kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Menu", callback_data="nav|start")]])
+            elif page == "promo":
+                t = (
+                    f"<b>🎟 𝗣𝗿𝗼𝗺𝗼 𝗖𝗼𝗱𝗲</b>\n\n"
+                    f"<blockquote>Have a promo code?\n"
+                    f"Send it with the command:\n\n"
+                    f"<code>/promo YOUR_CODE</code></blockquote>\n\n"
+                    f"<blockquote>💡 Get promo codes from:\n"
+                    f"• Admin giveaways\n"
+                    f"• Special events\n"
+                    f"• Referral rewards</blockquote>\n\n"
+                    f"<b>⚡ Powered by</b> <a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
+                )
+                kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Menu", callback_data="nav|start")]])
+            elif page == "mystats":
+                uid = str(cb.from_user.id)
+                u = db["users"].get(uid, {})
+                check_vip_expiry(int(uid))
+                refs = len(u.get("referrals", []))
+                dls = u.get("downloads", 0)
+                vip_s = "✅ Active" if u.get("vip") else "❌ Inactive"
+                vip_exp = u.get("vip_expires", "—")[:10] if u.get("vip_expires") else "—"
+                t = (
+                    f"<b>📊 𝗬𝗼𝘂𝗿 𝗦𝘁𝗮𝘁𝘀</b>\n\n"
+                    f"<blockquote>"
+                    f"👤 <b>ID:</b> <code>{uid}</code>\n"
+                    f"📅 <b>Joined:</b> {u.get('joined','?')[:10]}\n"
+                    f"📥 <b>Downloads:</b> {dls}\n"
+                    f"👑 <b>VIP:</b> {vip_s}\n"
+                    f"📅 <b>Expires:</b> {vip_exp}\n"
+                    f"👥 <b>Referrals:</b> {refs}</blockquote>\n\n"
+                    f"<b>⚡ Powered by</b> <a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
+                )
+                kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Menu", callback_data="nav|start")]])
             else:
                 t, kb = get_start_menu()
             
@@ -2505,8 +2615,13 @@ async def on_cb(_, cb: CallbackQuery):
         # Forward to dump channels
         dump_channels = db["settings"].get("dump_channels", [])
         for ch in dump_channels:
-            try: await video_msg.copy(int(ch))
-            except: pass
+            try:
+                await video_msg.copy(int(ch))
+                logger.info(f"[DUMP] Forwarded to {ch}")
+            except Exception as dump_err:
+                logger.error(f"[DUMP] Failed to forward to {ch}: {dump_err}")
+                try: await bot.send_message(int(ADMIN_ID), f"⚠️ Dump forward failed to <code>{ch}</code>\n<code>{dump_err}</code>", parse_mode=ParseMode.HTML)
+                except: pass
         
         # Increment download counter + track history
         db["stats"]["total_dl"] = db["stats"].get("total_dl", 0) + 1
