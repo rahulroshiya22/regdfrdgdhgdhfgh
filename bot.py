@@ -54,9 +54,9 @@ SITES = {
     # ── Social Media & Mainstream (FREE) ──
     "instagram":  {"icon": "💜", "name": "Instagram", "domains": [r"instagram\.com", r"instagr\.am"], "cookies": True},
     "facebook":   {"icon": "🔷", "name": "Facebook",  "domains": [r"facebook\.com", r"fb\.watch", r"fb\.com"]},
-    "youtube":    {"icon": "🔴", "name": "YouTube",   "domains": [r"youtube\.com", r"youtu\.be", r"m\.youtube\.com"]},
-    "tiktok":     {"icon": "🎵", "name": "TikTok",    "domains": [r"tiktok\.com", r"vm\.tiktok\.com"]},
-    "twitter":    {"icon": "🐦", "name": "Twitter/X", "domains": [r"twitter\.com", r"x\.com", r"t\.co"]},
+    "youtube":    {"icon": "🔴", "name": "YouTube",   "domains": [r"youtube\.com", r"youtu\.be", r"m\.youtube\.com"], "cookies": True},
+    "tiktok":     {"icon": "🎵", "name": "TikTok",    "domains": [r"tiktok\.com", r"vm\.tiktok\.com"], "cookies": True},
+    "twitter":    {"icon": "🐦", "name": "Twitter/X", "domains": [r"twitter\.com", r"x\.com", r"t\.co"], "cookies": True},
     "reddit":     {"icon": "🟠", "name": "Reddit",    "domains": [r"reddit\.com", r"v\.redd\.it", r"i\.redd\.it"]},
     "pinterest":  {"icon": "📌", "name": "Pinterest", "domains": [r"pinterest\.com", r"pin\.it"]},
     "vimeo":      {"icon": "🎬", "name": "Vimeo",     "domains": [r"vimeo\.com", r"player\.vimeo\.com"]},
@@ -64,7 +64,6 @@ SITES = {
     "twitch":     {"icon": "💜", "name": "Twitch",    "domains": [r"twitch\.tv", r"clips\.twitch\.tv"]},
     "snapchat":   {"icon": "👻", "name": "Snapchat",  "domains": [r"snapchat\.com", r"story\.snapchat\.com"]},
     "threads":    {"icon": "🧵", "name": "Threads",   "domains": [r"threads\.net"]},
-    "linkedin":   {"icon": "🔗", "name": "LinkedIn",  "domains": [r"linkedin\.com"]},
     "tumblr":     {"icon": "📝", "name": "Tumblr",    "domains": [r"tumblr\.com"]},
     "bilibili":   {"icon": "📺", "name": "Bilibili",  "domains": [r"bilibili\.com", r"b23\.tv"]},
     "likee":      {"icon": "🎭", "name": "Likee",     "domains": [r"likee\.video", r"l\.likee\.video"]},
@@ -127,7 +126,32 @@ URL_RE = re.compile(rf"https?://(?:[\w-]+\.)*(?:{'|'.join(ALL_DOMAINS)})/\S+")
 # Sites accessible to ALL users (free) — social media + xhamster
 FREE_SITES = {"xhamster", "instagram", "facebook", "youtube", "tiktok", "twitter",
               "reddit", "pinterest", "vimeo", "dailymotion", "twitch", "snapchat",
-              "threads", "linkedin", "tumblr", "bilibili", "likee"}
+              "threads", "tumblr", "bilibili", "likee"}
+
+# Cookies file for YouTube/TikTok etc.
+COOKIES_FILE = Path("cookies.txt")
+
+# User-friendly error messages (hide raw errors)
+USER_ERRORS = {
+    "Sign in to confirm": "⚠️ This video requires authentication. Please try another link or contact admin.",
+    "Private video": "🔒 This video is private and cannot be downloaded.",
+    "Video unavailable": "⚠️ This video is unavailable or has been removed.",
+    "Unable to extract": "⚠️ This platform is not fully supported. Try a different link.",
+    "Unsupported URL": "⚠️ This URL format is not supported.",
+    "HTTP Error 403": "🚫 Access denied by the server. Try again later.",
+    "HTTP Error 429": "⏳ Too many requests. Please wait and try again.",
+    "HTTP Error 404": "⚠️ Video not found. The link may be broken.",
+    "Geo restricted": "🌍 This video is not available in the bot's region.",
+    "age-restricted": "🔞 This video is age-restricted. Try adding cookies.",
+    "copyright": "©️ This video is blocked due to copyright.",
+}
+
+def get_user_error(error_str):
+    """Return user-friendly error message. Raw error goes to admin."""
+    for key, msg in USER_ERRORS.items():
+        if key.lower() in error_str.lower():
+            return msg
+    return "⚠️ Something went wrong. Our team has been notified."
 
 def detect(url):
     for k, v in SITES.items():
@@ -273,7 +297,10 @@ class Tracker:
 def get_info(url):
     opts = {"quiet": True, "no_warnings": True, "skip_download": True}
     site = SITES.get(detect(url), {})
-    if site.get("cookies"):
+    # Try cookies.txt first
+    if COOKIES_FILE.exists():
+        opts["cookiefile"] = str(COOKIES_FILE)
+    elif site.get("cookies"):
         for br in ["chrome", "edge", "firefox"]:
             try:
                 opts["cookiesfrombrowser"] = (br,)
@@ -322,7 +349,10 @@ def do_download(url, video_fid, audio_fid, dl_id, tracker):
             opts["merge_output_format"] = "mp4"
             opts["postprocessors"] = [{"key": "FFmpegVideoConvertor", "preferedformat": "mp4"}]
 
-    if cookies:
+    # Try cookies.txt first
+    if COOKIES_FILE.exists():
+        opts["cookiefile"] = str(COOKIES_FILE)
+    elif cookies:
         for br in ["chrome", "edge", "firefox"]:
             try:
                 opts["cookiesfrombrowser"] = (br,)
@@ -1570,27 +1600,46 @@ def get_help_menu():
     return t, kb
 
 def get_sites_menu():
+    free_social = [s for k, s in SITES.items() if k in FREE_SITES and k != "xhamster"]
+    free_adult = [s for k, s in SITES.items() if k == "xhamster"]
+    vip_tube = [s for k, s in SITES.items() if k in {"pornhub","xvideos","xnxx","redtube","youporn","spankbang","eporner","tube8","txxx","pornflip","porntube","sunporno","hellporno","alphaporno","zenporn","pornoxo","lovehomeporn","nubilesporn","manyvids","moviefap","pornbox","porntop"}]
+    vip_cam = [s for k, s in SITES.items() if k in {"chaturbate","stripchat","bongacams","cam4","camsoda","myfreecams","livejasmin"}]
+    vip_new = [s for k, s in SITES.items() if k in {"youjizz","drtuber","porntrex","beeg","hdzog","nuvid","vporn","4tube","thumbzilla","porndig","3movs","fansly","porn00","pornone","fux"}]
+    
+    def fmt_row(sites, per_line=3):
+        lines = []
+        for i in range(0, len(sites), per_line):
+            chunk = sites[i:i+per_line]
+            lines.append(" · ".join(f"{s['icon']} {s['name']}" for s in chunk))
+        return "\n".join(lines)
+
     t = (
-        f"<b>🌐 𝗔𝗹𝗹 𝗦𝘂𝗽𝗽𝗼𝗿𝘁𝗲𝗱 𝗦𝗶𝘁𝗲𝘀</b>\n\n"
-        f"<blockquote><b>📱 Social Media</b>\n"
-        f"💜 Instagram · 🔷 Facebook</blockquote>\n\n"
-        f"<blockquote><b>� Tube Sites</b>\n"
-        f"🔶 xHamster · 🟠 PornHub · 🔴 XVideos\n"
-        f"🟡 XNXX · 🔺 RedTube · 🩷 YouPorn\n"
-        f"🟤 SpankBang · ⬛ Eporner · 🔵 Tube8\n"
-        f"🟪 TXXX · 🔁 PornFlip · 📺 PornTube</blockquote>\n\n"
-        f"<blockquote><b>🎥 Live Cam Sites</b>\n"
-        f"🎥 Chaturbate · 💃 Stripchat · 🎪 BongaCams\n"
-        f"📹 CAM4 · 🥤 CamSoda</blockquote>\n\n"
-        f"<blockquote><b>📂 More Platforms</b>\n"
-        f"☀️ SunPorno · 🔥 HellPorno · 🅰️ AlphaPorno\n"
-        f"🧘 ZenPorn · ⭕ PornoXO · 🏠 LoveHomePorn\n"
-        f"🌸 NubilesPorn · 🎬 ManyVids · 🎞️ MovieFap\n"
-        f"📦 PornBox · 🏆 PornTop</blockquote>\n\n"
-        f"🌍 <i>All mirror domains are auto-detected!</i>\n"
-        f"<i>Total: <b>{len(SITES)}</b> platforms supported</i>\n\n"
+        f"<b>🌐 𝗦𝘂𝗽𝗽𝗼𝗿𝘁𝗲𝗱 𝗣𝗹𝗮𝘁𝗳𝗼𝗿𝗺𝘀</b>\n"
+        f"<i>Total: <b>{len(SITES)}</b> platforms</i>\n\n"
+        
+        f"<blockquote><b>📱 Social Media</b>  <i>FREE ✅</i>\n"
+        f"{fmt_row(free_social, 3)}</blockquote>\n\n"
+        
+        f"<blockquote><b>🔶 Adult — Free Tier</b>  <i>FREE ✅</i>\n"
+        f"{fmt_row(free_adult, 3)}</blockquote>\n\n"
+        
+        f"<blockquote><b>🎬 Tube Sites</b>  <i>VIP 👑</i>\n"
+        f"{fmt_row(vip_tube, 3)}</blockquote>\n\n"
+        
+        f"<blockquote><b>🎥 Live Cam Sites</b>  <i>VIP 👑</i>\n"
+        f"{fmt_row(vip_cam, 3)}</blockquote>\n\n"
+        
+        f"<blockquote><b>🆕 More Adult Sites</b>  <i>VIP 👑</i>\n"
+        f"{fmt_row(vip_new, 3)}</blockquote>\n\n"
+        
+        f"<blockquote>"
+        f"✅ <b>FREE</b> = All users can download\n"
+        f"👑 <b>VIP</b> = Premium access needed\n\n"
+        f"💡 Get VIP via /referral or /promo"
+        f"</blockquote>\n\n"
+        
         f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
-        f"<b>🛠 𝗕𝗼𝘁 𝗺𝗮𝗱𝗲 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
+        f"<b>⚡ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
     )
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Menu", callback_data="nav|start")]])
     return t, kb
@@ -2247,7 +2296,9 @@ async def on_cb(_, cb: CallbackQuery):
                     await cb.message.edit_text("<b>🎯 𝗖𝗵𝗼𝗼𝘀𝗲 𝗤𝘂𝗮𝗹𝗶𝘁𝘆:</b>", parse_mode=ParseMode.HTML, reply_markup=kb)
             except: pass
         except Exception as e:
-            await cb.answer(f"❌ Failed: {str(e)[:80]}", show_alert=True)
+            friendly = get_user_error(str(e))
+            await cb.answer(friendly[:180], show_alert=True)
+            await send_error_to_admin(f"Quality refetch: {url}", e)
         return
 
     # ── Download: mode|urlid|video_fid|audio_fid ──
@@ -2382,7 +2433,9 @@ async def on_cb(_, cb: CallbackQuery):
             )
         except Exception as e:
             logger.error(f"Gofile Upload: {e}")
-            await status.edit_text(f"❌ <b>Upload failed</b>\n<code>{str(e)[:150]}</code>", parse_mode=ParseMode.HTML)
+            friendly = get_user_error(str(e))
+            await status.edit_text(f"❌ <b>Upload failed</b>\n{friendly}", parse_mode=ParseMode.HTML)
+            await send_error_to_admin(f"Gofile upload", e)
         finally:
             cleanup(filepath)
             CANCEL_FLAGS.pop(dl_id, None)
@@ -2486,7 +2539,9 @@ async def on_cb(_, cb: CallbackQuery):
 
     except Exception as e:
         logger.error(f"Upload: {e}")
-        await status.edit_text(f"❌ <b>Upload failed</b>\n<code>{str(e)[:150]}</code>", parse_mode=ParseMode.HTML)
+        friendly = get_user_error(str(e))
+        await status.edit_text(f"❌ <b>Upload failed</b>\n{friendly}", parse_mode=ParseMode.HTML)
+        await send_error_to_admin(f"TG upload", e)
     finally:
         cleanup(filepath)
         if thumb_path: cleanup(thumb_path)
@@ -2643,9 +2698,14 @@ async def on_url(client, msg: Message):
 
     except Exception as e:
         logger.error(f"Info: {e}")
+        friendly = get_user_error(str(e))
         await status.edit_text(
-            f"❌ <b>Failed</b>\n<blockquote><code>{str(e)[:200]}</code></blockquote>",
-            parse_mode=ParseMode.HTML)
+            f"<b>⚠️ 𝗖𝗼𝘂𝗹𝗱𝗻'𝘁 𝗣𝗿𝗼𝗰𝗲𝘀𝘀</b>\n\n"
+            f"<blockquote>{friendly}</blockquote>\n\n"
+            f"💡 <i>Try a different link or contact admin.</i>\n"
+            f"<i>━ 𝗕𝗼𝘁 𝗯𝘆 </i><a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>",
+            parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        await send_error_to_admin(f"Info extract: {url}", e)
 
 
 # ━━━ GLOBAL ERROR HANDLER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
