@@ -38,7 +38,9 @@ ADMIN_ID = os.getenv("ADMIN_ID", "5904403234")
 
 DOWNLOAD_DIR = Path("downloads")
 DOWNLOAD_DIR.mkdir(exist_ok=True)
-BANNER = Path(__file__).parent / "banner.png"
+_banner_jpg = Path(__file__).parent / "banner.jpg"
+_banner_png = Path(__file__).parent / "banner.png"
+BANNER = _banner_jpg if _banner_jpg.exists() else _banner_png
 
 URL_STORE = {}
 INFO_STORE = {}  # url_id -> {title, thumb, uploader, duration}
@@ -230,7 +232,7 @@ def get_formats(info: dict) -> list:
     for f in fmts:
         h = f.get("height")
         vc = f.get("vcodec", "none")
-        if not h or h < 100 or vc == "none" or not vc:
+        if not h or h < 100 or vc == "none" or not vc or vc is None:
             continue
 
         fid = f.get("format_id", "")
@@ -646,6 +648,9 @@ async def check_force_channel(client, uid) -> bool:
     except:
         return False
 
+# Cache to prevent duplicate denial messages
+_DENIAL_CACHE = {}
+
 async def check_user(_, client_or_dummy, query):
     if not query.from_user: return False
     uid = query.from_user.id
@@ -653,6 +658,15 @@ async def check_user(_, client_or_dummy, query):
     # Skip checks for force channel verification callback
     if isinstance(query, CallbackQuery) and query.data and query.data == "fc|check":
         return True
+    
+    # Prevent duplicate denial messages (10s cooldown)
+    import time as _time
+    cache_key = f"{uid}_{type(query).__name__}"
+    now = _time.time()
+    last_denied = _DENIAL_CACHE.get(cache_key, 0)
+    def _deny_once():
+        _DENIAL_CACHE[cache_key] = now
+        return now - last_denied > 10
     
     # ── Group Management Check ──
     if isinstance(query, Message) and query.chat and query.chat.type in ("group", "supergroup"):
@@ -684,61 +698,39 @@ async def check_user(_, client_or_dummy, query):
     
     # ── Banned Check ──
     if u.get("banned"):
-        try:
-            banned_txt = (
-                f"<b>🚫 𝗔𝗰𝗰𝗲𝘀𝘀 𝗗𝗲𝗻𝗶𝗲𝗱</b>\n\n"
-                f"<blockquote>"
-                f"Your account has been <b>banned</b> from\n"
-                f"using this bot.\n\n"
-                f"User ID: <code>{uid}</code>"
-                f"</blockquote>\n\n"
-                f"<blockquote>"
-                f"If you think this is a mistake, contact:\n"
-                f"<a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
-                f"</blockquote>\n\n"
-                f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
-                f"<b>⚡ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
-            )
-            if isinstance(query, Message):
-                if BANNER.exists():
-                    await query.reply_photo(str(BANNER), caption=banned_txt, parse_mode=ParseMode.HTML)
-                else:
+        if _deny_once():
+            try:
+                banned_txt = (
+                    f"<b>🚫 Access Denied</b>\n\n"
+                    f"<blockquote>Your account has been <b>banned</b>.\nUser ID: <code>{uid}</code></blockquote>\n\n"
+                    f"<blockquote>Contact: <a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a></blockquote>"
+                )
+                if isinstance(query, Message):
                     await query.reply_text(banned_txt, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-            elif isinstance(query, CallbackQuery):
-                await query.answer("🚫 You are banned from this bot.", show_alert=True)
-        except: pass
+                elif isinstance(query, CallbackQuery):
+                    await query.answer("🚫 You are banned.", show_alert=True)
+            except: pass
         return False
         
     # ── Pending Approval Check ──
     if not u.get("approved", True) and not is_admin(uid):
-        try:
-            pending_txt = (
-                f"<b>⏳ 𝗔𝗽𝗽𝗿𝗼𝘃𝗮𝗹 𝗣𝗲𝗻𝗱𝗶𝗻𝗴</b>\n\n"
-                f"<blockquote>"
-                f"🔒 This is a <b>private bot</b>.\n"
-                f"Your account is awaiting admin approval.\n\n"
-                f"Your ID: <code>{uid}</code>"
-                f"</blockquote>\n\n"
-                f"<blockquote>"
-                f"👇 Contact admin to get approved:\n"
-                f"<a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a>"
-                f"</blockquote>\n\n"
-                f"<i>━━━━━━━━━━━━━━━━━━━━━━━━━</i>\n"
-                f"<b>⚡ 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗯𝘆</b> <a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>"
-            )
-            kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("💬 Contact @IRONMAXPRO", url="https://t.me/IRONMAXPRO")]
-            ])
-            if isinstance(query, Message):
-                if BANNER.exists():
-                    await query.reply_photo(str(BANNER), caption=pending_txt, parse_mode=ParseMode.HTML, reply_markup=kb)
-                else:
+        if _deny_once():
+            try:
+                pending_txt = (
+                    f"<b>⏳ Approval Pending</b>\n\n"
+                    f"<blockquote>🔒 This is a <b>private bot</b>.\nYour account is awaiting admin approval.\n\nYour ID: <code>{uid}</code></blockquote>\n\n"
+                    f"<blockquote>👇 Contact admin:\n<a href='https://t.me/IRONMAXPRO'>@IRONMAXPRO</a></blockquote>"
+                )
+                kb = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("💬 Contact @IRONMAXPRO", url="https://t.me/IRONMAXPRO")]
+                ])
+                if isinstance(query, Message):
                     await query.reply_text(pending_txt, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
-            elif isinstance(query, CallbackQuery):
-                await query.answer("⏳ Your account is pending admin approval.", show_alert=True)
-        except: pass
+                elif isinstance(query, CallbackQuery):
+                    await query.answer("⏳ Pending admin approval.", show_alert=True)
+            except: pass
         return False
-        
+
     # ── Maintenance Check ──
     if db["settings"].get("maintenance") and not is_admin(uid):
         try:
@@ -821,7 +813,7 @@ async def cmd_backup(_, msg: Message):
     await cloud_backup()
     await msg.reply_text("✅ <b>Backup saved to Telegram!</b>\n<i>Data will survive redeployment.</i>", parse_mode=ParseMode.HTML)
 
-@bot.on_message(user_filter, group=-1)
+@bot.on_message(filters.private, group=-1)
 async def admin_state_handler(client, msg: Message):
     uid = str(msg.from_user.id)
     if not is_admin(uid) or uid not in ADMIN_STATE:
@@ -1956,7 +1948,13 @@ async def on_cb(_, cb: CallbackQuery):
                 t, kb = get_start_menu()
             
             if cb.message.photo:
-                await cb.message.edit_caption(caption=t, parse_mode=ParseMode.HTML, reply_markup=kb)
+                if len(t) > 1024:
+                    # Text too long for caption — delete photo, send text
+                    try: await cb.message.delete()
+                    except: pass
+                    await bot.send_message(cb.from_user.id, t, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
+                else:
+                    await cb.message.edit_caption(caption=t, parse_mode=ParseMode.HTML, reply_markup=kb)
             else:
                 await cb.message.edit_text(text=t, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
         except Exception as e:
