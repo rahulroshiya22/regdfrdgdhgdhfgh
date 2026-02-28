@@ -1001,6 +1001,103 @@ async def admin_state_handler(client, msg: Message):
             await msg.reply_text("❌ Group not found in list.")
         del ADMIN_STATE[uid]; msg.stop_propagation()
 
+    elif state == "addpromo":
+        if not msg.text: return
+        parts = msg.text.strip().split()
+        if len(parts) < 2:
+            await msg.reply_text("📝 Format: <code>CODE DAYS MAX_USES</code>\nExample: <code>WELCOME 7 100</code>", parse_mode=ParseMode.HTML)
+            msg.stop_propagation(); return
+        code = parts[0].upper()
+        days = int(parts[1]) if len(parts) > 1 else 7
+        max_uses = int(parts[2]) if len(parts) > 2 else 999
+        db["settings"].setdefault("promo_codes", {})[code] = {"vip_days": days, "max_uses": max_uses, "used": 0}
+        save_data(db)
+        await msg.reply_text(f"✅ Promo <code>{code}</code> created!\n{days} VIP days, max {max_uses} uses.", parse_mode=ParseMode.HTML)
+        del ADMIN_STATE[uid]; msg.stop_propagation()
+
+    elif state == "addadmin":
+        if not msg.text: return
+        aid = msg.text.strip()
+        if str(msg.from_user.id) != str(ADMIN_ID):
+            await msg.reply_text("❌ Only the owner can add admins."); del ADMIN_STATE[uid]; msg.stop_propagation(); return
+        admins = db["settings"].setdefault("multi_admins", [])
+        if aid not in admins:
+            admins.append(aid)
+            save_data(db)
+            await msg.reply_text(f"✅ <code>{aid}</code> is now an admin!", parse_mode=ParseMode.HTML)
+        else:
+            await msg.reply_text("⚠️ Already an admin.")
+        del ADMIN_STATE[uid]; msg.stop_propagation()
+
+    elif state == "remadmin":
+        if not msg.text: return
+        aid = msg.text.strip()
+        admins = db["settings"].get("multi_admins", [])
+        if aid in admins:
+            admins.remove(aid)
+            save_data(db)
+            await msg.reply_text(f"✅ <code>{aid}</code> removed from admins.", parse_mode=ParseMode.HTML)
+        else:
+            await msg.reply_text("❌ Not found in admin list.")
+        del ADMIN_STATE[uid]; msg.stop_propagation()
+
+    elif state == "addvip":
+        if not msg.text: return
+        parts = msg.text.strip().split()
+        tgt = parts[0]
+        days = int(parts[1]) if len(parts) > 1 else 30
+        if tgt in db["users"]:
+            from datetime import timedelta
+            db["users"][tgt]["vip"] = True
+            db["users"][tgt]["vip_expires"] = (datetime.now() + timedelta(days=days)).isoformat()
+            save_data(db)
+            await msg.reply_text(f"✅ VIP granted to <code>{tgt}</code> for {days} days!", parse_mode=ParseMode.HTML)
+        else:
+            await msg.reply_text("❌ User not found.")
+        del ADMIN_STATE[uid]; msg.stop_propagation()
+
+    elif state == "remvip":
+        if not msg.text: return
+        tgt = msg.text.strip()
+        if tgt in db["users"]:
+            db["users"][tgt]["vip"] = False
+            db["users"][tgt]["vip_expires"] = ""
+            save_data(db)
+            await msg.reply_text(f"✅ VIP revoked from <code>{tgt}</code>.", parse_mode=ParseMode.HTML)
+        else:
+            await msg.reply_text("❌ User not found.")
+        del ADMIN_STATE[uid]; msg.stop_propagation()
+
+    elif state == "setratelimit":
+        if not msg.text: return
+        try:
+            val = int(msg.text.strip())
+            db["settings"]["rate_limit_per_hour"] = val
+            save_data(db)
+            await msg.reply_text(f"✅ Rate limit set to <b>{val}/hour</b>", parse_mode=ParseMode.HTML)
+        except: await msg.reply_text("❌ Enter a number.")
+        del ADMIN_STATE[uid]; msg.stop_propagation()
+
+    elif state == "setspam":
+        if not msg.text: return
+        try:
+            val = int(msg.text.strip())
+            db["settings"]["anti_spam_cooldown"] = val
+            save_data(db)
+            await msg.reply_text(f"✅ Anti-spam cooldown set to <b>{val}s</b>", parse_mode=ParseMode.HTML)
+        except: await msg.reply_text("❌ Enter a number.")
+        del ADMIN_STATE[uid]; msg.stop_propagation()
+
+    elif state == "setrefdays":
+        if not msg.text: return
+        try:
+            val = int(msg.text.strip())
+            db["settings"]["referral_vip_days"] = val
+            save_data(db)
+            await msg.reply_text(f"✅ Referral reward set to <b>{val} VIP days</b>", parse_mode=ParseMode.HTML)
+        except: await msg.reply_text("❌ Enter a number.")
+        del ADMIN_STATE[uid]; msg.stop_propagation()
+
 
 def get_admin_main():
     total_u = db["stats"]["total_users"]
@@ -1009,6 +1106,9 @@ def get_admin_main():
     maint = "🔴 ON" if db["settings"]["maintenance"] else "🟢 OFF"
     fc = "🟢 ON" if db["settings"].get("force_channel") else "🔴 OFF"
     vip = "🟢 ON" if db["settings"].get("vip_mode") else "🔴 OFF"
+    vip_count = sum(1 for u in db["users"].values() if u.get("vip"))
+    rate = db["settings"].get("rate_limit_per_hour", 20)
+    admins_count = len(db["settings"].get("multi_admins", [])) + 1
     
     cpu = psutil.cpu_percent()
     ram = psutil.virtual_memory().percent
@@ -1018,6 +1118,7 @@ def get_admin_main():
         f"👑 <b>TurboGrab Admin Dashboard</b>\n\n"
         f"📊 <b>Platform Stats</b>\n"
         f"├ 👥 Users: <code>{total_u}</code>\n"
+        f"├ 👑 VIP: <code>{vip_count}</code>\n"
         f"└ ⬇️ Downloads: <code>{total_dl}</code>\n\n"
         f"🖥 <b>Server</b>\n"
         f"├ ⚙️ CPU: <code>{cpu}%</code>\n"
@@ -1027,7 +1128,9 @@ def get_admin_main():
         f"├ 🚪 Approval: <b>{appr_mode}</b>\n"
         f"├ 🛠 Maintenance: <b>{maint}</b>\n"
         f"├ 📢 Force Join: <b>{fc}</b>\n"
-        f"└ 👑 VIP Mode: <b>{vip}</b>"
+        f"├ 👑 VIP Mode: <b>{vip}</b>\n"
+        f"├ ⏱ Rate Limit: <b>{rate}/hr</b>\n"
+        f"└ 👮 Admins: <b>{admins_count}</b>"
     )
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("👥 Users & Access", callback_data="adm|nav|users"),
@@ -1036,13 +1139,114 @@ def get_admin_main():
          InlineKeyboardButton("📣 Broadcast", callback_data="adm|state|broadcast")],
         [InlineKeyboardButton("📁 Files & Cache", callback_data="adm|nav|files"),
          InlineKeyboardButton("📊 Stats & Logs", callback_data="adm|nav|stats")],
-        [InlineKeyboardButton("🎨 Bot Appearance", callback_data="adm|nav|appearance"),
+        [InlineKeyboardButton("🎨 Appearance", callback_data="adm|nav|appearance"),
          InlineKeyboardButton("🔗 Integrations", callback_data="adm|nav|integrations")],
         [InlineKeyboardButton("🛡 Security", callback_data="adm|nav|security"),
          InlineKeyboardButton("🔔 Notifications", callback_data="adm|nav|notify")],
-        [InlineKeyboardButton("� Dump Channels", callback_data="adm|nav|dump"),
-         InlineKeyboardButton("👥 Group Mgmt", callback_data="adm|nav|groups")],
-        [InlineKeyboardButton("�🔙 Exit Panel", callback_data="nav|start")]
+        [InlineKeyboardButton("📦 Dump Channels", callback_data="adm|nav|dump"),
+         InlineKeyboardButton("👥 Groups", callback_data="adm|nav|groups")],
+        [InlineKeyboardButton("🎟 Promo Codes", callback_data="adm|nav|promo"),
+         InlineKeyboardButton("👮 Multi Admin", callback_data="adm|nav|multiadmin")],
+        [InlineKeyboardButton("👑 VIP Manager", callback_data="adm|nav|vipmanager"),
+         InlineKeyboardButton("⚡ Advanced", callback_data="adm|nav|advanced")],
+        [InlineKeyboardButton("☁️ Backup Now", callback_data="adm|dobackup"),
+         InlineKeyboardButton("🔄 Update yt-dlp", callback_data="adm|updateytdlp")],
+        [InlineKeyboardButton("🔙 Exit Panel", callback_data="nav|start")]
+    ])
+    return t, kb
+
+def get_admin_promo():
+    promos = db["settings"].get("promo_codes", {})
+    promo_list = ""
+    for code, info in list(promos.items())[:10]:
+        used = info.get("used", 0)
+        mx = info.get("max_uses", 999)
+        days = info.get("vip_days", 7)
+        promo_list += f"  🎟 <code>{code}</code> — {days}d VIP ({used}/{mx} used)\n"
+    if not promo_list: promo_list = "  <i>No promo codes yet</i>\n"
+    t = (
+        f"🎟 <b>𝗣𝗿𝗼𝗺𝗼 𝗖𝗼𝗱𝗲 𝗠𝗮𝗻𝗮𝗴𝗲𝗿</b>\n\n"
+        f"<blockquote>"
+        f"Create promo codes to give VIP access.\n"
+        f"Users redeem with /promo CODE"
+        f"</blockquote>\n\n"
+        f"<b>Active Codes ({len(promos)}):</b>\n"
+        f"{promo_list}"
+    )
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("➕ Create Promo", callback_data="adm|state|addpromo")],
+        [InlineKeyboardButton("🗑 Clear All Promos", callback_data="adm|clearpromos")],
+        [InlineKeyboardButton("🔙 Back to Dash", callback_data="adm|nav|main")]
+    ])
+    return t, kb
+
+def get_admin_multiadmin():
+    admins = db["settings"].get("multi_admins", [])
+    admin_list = f"  👑 <code>{ADMIN_ID}</code> (Owner)\n"
+    for a in admins:
+        admin_list += f"  👮 <code>{a}</code>\n"
+    t = (
+        f"👮 <b>𝗠𝘂𝗹𝘁𝗶 𝗔𝗱𝗺𝗶𝗻</b>\n\n"
+        f"<blockquote>"
+        f"Add trusted users as co-admins.\n"
+        f"They can manage users, settings, etc."
+        f"</blockquote>\n\n"
+        f"<b>Admins ({len(admins)+1}):</b>\n"
+        f"{admin_list}"
+    )
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("➕ Add Admin", callback_data="adm|state|addadmin"),
+         InlineKeyboardButton("➖ Remove Admin", callback_data="adm|state|remadmin")],
+        [InlineKeyboardButton("🔙 Back to Dash", callback_data="adm|nav|main")]
+    ])
+    return t, kb
+
+def get_admin_vipmanager():
+    vip_users = [(uid, u) for uid, u in db["users"].items() if u.get("vip")]
+    vip_list = ""
+    for uid, u in vip_users[:15]:
+        exp = u.get("vip_expires", "")[:10] or "∞"
+        vip_list += f"  👑 <code>{uid}</code> — expires: {exp}\n"
+    if not vip_list: vip_list = "  <i>No VIP users</i>\n"
+    t = (
+        f"👑 <b>𝗩𝗜𝗣 𝗠𝗮𝗻𝗮𝗴𝗲𝗿</b>\n\n"
+        f"<blockquote>"
+        f"Manage VIP users and access."
+        f"</blockquote>\n\n"
+        f"<b>VIP Users ({len(vip_users)}):</b>\n"
+        f"{vip_list}"
+    )
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("➕ Give VIP", callback_data="adm|state|addvip"),
+         InlineKeyboardButton("➖ Revoke VIP", callback_data="adm|state|remvip")],
+        [InlineKeyboardButton("🗑 Revoke All VIP", callback_data="adm|revokeallvip")],
+        [InlineKeyboardButton("🔙 Back to Dash", callback_data="adm|nav|main")]
+    ])
+    return t, kb
+
+def get_admin_advanced():
+    rate = db["settings"].get("rate_limit_per_hour", 20)
+    spam = db["settings"].get("anti_spam_cooldown", 5)
+    ref_days = db["settings"].get("referral_vip_days", 7)
+    auto_yt = "🟢 ON" if db["settings"].get("auto_update_ytdlp") else "🔴 OFF"
+    daily = "🟢 ON" if db["settings"].get("daily_stats") else "🔴 OFF"
+    t = (
+        f"⚡ <b>𝗔𝗱𝘃𝗮𝗻𝗰𝗲𝗱 𝗦𝗲𝘁𝘁𝗶𝗻𝗴𝘀</b>\n\n"
+        f"<blockquote>"
+        f"⏱ Rate Limit: <b>{rate}/hour</b>\n"
+        f"🚫 Anti-Spam Cooldown: <b>{spam}s</b>\n"
+        f"🔗 Referral VIP Days: <b>{ref_days}</b>\n"
+        f"🔄 Auto Update yt-dlp: <b>{auto_yt}</b>\n"
+        f"📊 Daily Stats Report: <b>{daily}</b>"
+        f"</blockquote>"
+    )
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"⏱ Rate: {rate}/hr", callback_data="adm|state|setratelimit"),
+         InlineKeyboardButton(f"🚫 Spam: {spam}s", callback_data="adm|state|setspam")],
+        [InlineKeyboardButton(f"🔗 Ref: {ref_days}d", callback_data="adm|state|setrefdays"),
+         InlineKeyboardButton(f"🔄 Auto-YT: {auto_yt}", callback_data="adm|toggleytdlp")],
+        [InlineKeyboardButton(f"📊 Daily: {daily}", callback_data="adm|toggledaily")],
+        [InlineKeyboardButton("🔙 Back to Dash", callback_data="adm|nav|main")]
     ])
     return t, kb
 
@@ -1635,6 +1839,10 @@ async def on_cb(_, cb: CallbackQuery):
                 elif page == "notify": t, kb = get_admin_notify()
                 elif page == "dump": t, kb = get_admin_dump()
                 elif page == "groups": t, kb = get_admin_groups()
+                elif page == "promo": t, kb = get_admin_promo()
+                elif page == "multiadmin": t, kb = get_admin_multiadmin()
+                elif page == "vipmanager": t, kb = get_admin_vipmanager()
+                elif page == "advanced": t, kb = get_admin_advanced()
                 else: t, kb = get_admin_main()
                 await cb.message.edit_text(t, parse_mode=ParseMode.HTML, reply_markup=kb)
         except: pass
@@ -1726,6 +1934,14 @@ async def on_cb(_, cb: CallbackQuery):
                 "remdump": "➖ Send the dump channel ID to remove.\nType <code>cancel</code> to abort.",
                 "addgroup": "👥 Send the group ID to allow (e.g. <code>-1001234567890</code>).\nType <code>cancel</code> to abort.",
                 "remgroup": "➖ Send the group ID to remove from allowed list.\nType <code>cancel</code> to abort.",
+                "addpromo": "🎟 Send promo code details:\n<code>CODE DAYS MAX_USES</code>\nExample: <code>WELCOME 7 100</code>\nType <code>cancel</code> to abort.",
+                "addadmin": "👮 Send the User ID to add as admin.\nType <code>cancel</code> to abort.",
+                "remadmin": "👮 Send the User ID to remove from admins.\nType <code>cancel</code> to abort.",
+                "addvip": "👑 Send User ID and optional days:\n<code>USER_ID DAYS</code>\nExample: <code>123456789 30</code>\nType <code>cancel</code> to abort.",
+                "remvip": "👑 Send the User ID to revoke VIP.\nType <code>cancel</code> to abort.",
+                "setratelimit": "⏱ Send the max downloads per hour (0 = unlimited).\nType <code>cancel</code> to abort.",
+                "setspam": "🚫 Send anti-spam cooldown in seconds (0 = disabled).\nType <code>cancel</code> to abort.",
+                "setrefdays": "🔗 Send the VIP days per referral.\nType <code>cancel</code> to abort.",
             }
             if opt in state_prompts:
                 ADMIN_STATE[uid] = opt
@@ -1818,6 +2034,47 @@ async def on_cb(_, cb: CallbackQuery):
             t, kb = get_admin_groups()
             try: await cb.message.edit_text(t, parse_mode=ParseMode.HTML, reply_markup=kb)
             except: pass
+        elif act == "clearpromos":
+            db["settings"]["promo_codes"] = {}
+            save_data(db)
+            await cb.answer("✅ All promo codes cleared.", show_alert=True)
+            t, kb = get_admin_promo()
+            try: await cb.message.edit_text(t, parse_mode=ParseMode.HTML, reply_markup=kb)
+            except: pass
+        elif act == "revokeallvip":
+            for u in db["users"].values():
+                u["vip"] = False; u["vip_expires"] = ""
+            save_data(db)
+            await cb.answer("✅ All VIP revoked.", show_alert=True)
+            t, kb = get_admin_vipmanager()
+            try: await cb.message.edit_text(t, parse_mode=ParseMode.HTML, reply_markup=kb)
+            except: pass
+        elif act == "toggleytdlp":
+            db["settings"]["auto_update_ytdlp"] = not db["settings"].get("auto_update_ytdlp", True)
+            save_data(db)
+            await cb.answer(f"Auto yt-dlp: {'ON' if db['settings']['auto_update_ytdlp'] else 'OFF'}", show_alert=True)
+            t, kb = get_admin_advanced()
+            try: await cb.message.edit_text(t, parse_mode=ParseMode.HTML, reply_markup=kb)
+            except: pass
+        elif act == "toggledaily":
+            db["settings"]["daily_stats"] = not db["settings"].get("daily_stats", True)
+            save_data(db)
+            await cb.answer(f"Daily stats: {'ON' if db['settings']['daily_stats'] else 'OFF'}", show_alert=True)
+            t, kb = get_admin_advanced()
+            try: await cb.message.edit_text(t, parse_mode=ParseMode.HTML, reply_markup=kb)
+            except: pass
+        elif act == "dobackup":
+            await cb.answer("☁️ Backup started...", show_alert=True)
+            await cloud_backup()
+        elif act == "updateytdlp":
+            await cb.answer("🔄 Updating yt-dlp...", show_alert=True)
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    "pip", "install", "-U", "yt-dlp",
+                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                await proc.communicate()
+                await cb.answer("✅ yt-dlp updated!", show_alert=True)
+            except: await cb.answer("❌ Update failed.", show_alert=True)
         return
 
     # ── VIP Request System ──
