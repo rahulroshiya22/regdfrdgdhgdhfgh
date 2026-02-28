@@ -54,7 +54,7 @@ SITES = {
     # ── Social Media & Mainstream (FREE) ──
     "instagram":  {"icon": "💜", "name": "Instagram", "domains": [r"instagram\.com", r"instagr\.am"], "cookies": True},
     "facebook":   {"icon": "🔷", "name": "Facebook",  "domains": [r"facebook\.com", r"fb\.watch", r"fb\.com"]},
-    "youtube":    {"icon": "🔴", "name": "YouTube",   "domains": [r"youtube\.com", r"youtu\.be", r"m\.youtube\.com"], "cookies": True},
+
     "tiktok":     {"icon": "🎵", "name": "TikTok",    "domains": [r"tiktok\.com", r"vm\.tiktok\.com"], "cookies": True},
     "twitter":    {"icon": "🐦", "name": "Twitter/X", "domains": [r"twitter\.com", r"x\.com", r"t\.co"], "cookies": True},
     "reddit":     {"icon": "🟠", "name": "Reddit",    "domains": [r"reddit\.com", r"v\.redd\.it", r"i\.redd\.it"]},
@@ -124,7 +124,7 @@ URL_RE = re.compile(rf"https?://(?:[\w-]+\.)*(?:{'|'.join(ALL_DOMAINS)})/\S+")
 
 
 # Sites accessible to ALL users (free) — social media + xhamster
-FREE_SITES = {"xhamster", "instagram", "facebook", "youtube", "tiktok", "twitter",
+FREE_SITES = {"xhamster", "instagram", "facebook", "tiktok", "twitter",
               "reddit", "pinterest", "vimeo", "dailymotion", "twitch", "snapchat",
               "threads", "tumblr", "bilibili", "likee"}
 
@@ -144,6 +144,11 @@ USER_ERRORS = {
     "Geo restricted": "🌍 This video is not available in the bot's region.",
     "age-restricted": "🔞 This video is age-restricted. Try adding cookies.",
     "copyright": "©️ This video is blocked due to copyright.",
+    "Requested format is not available": "⚠️ This quality is not available. Please try another quality or use ⚡ Best Auto.",
+    "format is not available": "⚠️ This quality is not available. Please try another quality or use ⚡ Best Auto.",
+    "Cancelled by user": "❌ Download cancelled.",
+    "No video formats found": "⚠️ No downloadable video found at this URL.",
+    "is not a valid URL": "⚠️ Invalid URL. Please send a valid video link.",
 }
 
 def get_user_error(error_str):
@@ -368,6 +373,15 @@ def do_download(url, video_fid, audio_fid, dl_id, tracker):
             info = y.extract_info(url, download=True)
             return y.prepare_filename(info)
     except Exception as e:
+        # If specific format fails, try best format as fallback
+        if "format is not available" in str(e).lower() or "requested format" in str(e).lower():
+            opts["format"] = "best"
+            try:
+                with yt_dlp.YoutubeDL(opts) as y:
+                    info = y.extract_info(url, download=True)
+                    return y.prepare_filename(info)
+            except:
+                pass
         raise e
 
 
@@ -635,6 +649,10 @@ async def check_force_channel(client, uid) -> bool:
 async def check_user(_, client_or_dummy, query):
     if not query.from_user: return False
     uid = query.from_user.id
+    
+    # Skip checks for force channel verification callback
+    if isinstance(query, CallbackQuery) and query.data and query.data == "fc|check":
+        return True
     
     # ── Group Management Check ──
     if isinstance(query, Message) and query.chat and query.chat.type in ("group", "supergroup"):
@@ -1617,11 +1635,11 @@ def get_sites_menu():
         f"<i>Unlimited access for all users:</i>\n\n"
         
         f"<blockquote><b>Social Media</b>\n"
-        f"• Instagram · Facebook · YouTube\n"
-        f"• TikTok · X (Twitter) · Reddit\n"
-        f"• Pinterest · Vimeo · Dailymotion\n"
-        f"• Twitch · Snapchat · Threads\n"
-        f"• Tumblr · Bilibili · Likee</blockquote>\n\n"
+        f"• Instagram · Facebook · TikTok\n"
+        f"• X (Twitter) · Reddit · Pinterest\n"
+        f"• Vimeo · Dailymotion · Twitch\n"
+        f"• Snapchat · Threads · Tumblr\n"
+        f"• Bilibili · Likee</blockquote>\n\n"
         
         f"<blockquote><b>Adult Content</b>\n"
         f"• xHamster</blockquote>\n\n"
