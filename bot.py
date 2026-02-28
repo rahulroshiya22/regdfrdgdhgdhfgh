@@ -51,9 +51,26 @@ VER = "5.0"
 
 # ━━━ SITES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SITES = {
+    # ── Social Media & Mainstream (FREE) ──
     "instagram":  {"icon": "💜", "name": "Instagram", "domains": [r"instagram\.com", r"instagr\.am"], "cookies": True},
     "facebook":   {"icon": "🔷", "name": "Facebook",  "domains": [r"facebook\.com", r"fb\.watch", r"fb\.com"]},
+    "youtube":    {"icon": "🔴", "name": "YouTube",   "domains": [r"youtube\.com", r"youtu\.be", r"m\.youtube\.com"]},
+    "tiktok":     {"icon": "🎵", "name": "TikTok",    "domains": [r"tiktok\.com", r"vm\.tiktok\.com"]},
+    "twitter":    {"icon": "🐦", "name": "Twitter/X", "domains": [r"twitter\.com", r"x\.com", r"t\.co"]},
+    "reddit":     {"icon": "🟠", "name": "Reddit",    "domains": [r"reddit\.com", r"v\.redd\.it", r"i\.redd\.it"]},
+    "pinterest":  {"icon": "📌", "name": "Pinterest", "domains": [r"pinterest\.com", r"pin\.it"]},
+    "vimeo":      {"icon": "🎬", "name": "Vimeo",     "domains": [r"vimeo\.com", r"player\.vimeo\.com"]},
+    "dailymotion":{"icon": "📺", "name": "DailyMotion","domains": [r"dailymotion\.com", r"dai\.ly"]},
+    "twitch":     {"icon": "💜", "name": "Twitch",    "domains": [r"twitch\.tv", r"clips\.twitch\.tv"]},
+    "snapchat":   {"icon": "👻", "name": "Snapchat",  "domains": [r"snapchat\.com", r"story\.snapchat\.com"]},
+    "threads":    {"icon": "🧵", "name": "Threads",   "domains": [r"threads\.net"]},
+    "linkedin":   {"icon": "🔗", "name": "LinkedIn",  "domains": [r"linkedin\.com"]},
+    "tumblr":     {"icon": "📝", "name": "Tumblr",    "domains": [r"tumblr\.com"]},
+    "bilibili":   {"icon": "📺", "name": "Bilibili",  "domains": [r"bilibili\.com", r"b23\.tv"]},
+    "likee":      {"icon": "🎭", "name": "Likee",     "domains": [r"likee\.video", r"l\.likee\.video"]},
+    # ── Adult: xHamster (FREE) ──
     "xhamster":   {"icon": "🔶", "name": "xHamster",  "domains": [r"xhamster\d*\.(?:com|desi|one|gold)", r"xhms\.pro"]},
+    # ── Adult: VIP Sites ──
     "pornhub":    {"icon": "🟠", "name": "PornHub",   "domains": [r"pornhub\.com", r"pornhubpremium\.com"]},
     "xvideos":    {"icon": "🔴", "name": "XVideos",   "domains": [r"xvideos\d*\.com", r"xvideos\.es"]},
     "xnxx":       {"icon": "🟡", "name": "XNXX",      "domains": [r"xnxx\d*\.com", r"xnxx\.tv"]},
@@ -81,6 +98,24 @@ SITES = {
     "moviefap":   {"icon": "🎞️", "name": "MovieFap",  "domains": [r"moviefap\.com"]},
     "pornbox":    {"icon": "📦", "name": "PornBox",   "domains": [r"pornbox\.com"]},
     "porntop":    {"icon": "🏆", "name": "PornTop",   "domains": [r"porntop\.com"]},
+    # ── New Adult Sites (VIP) ──
+    "youjizz":    {"icon": "💦", "name": "YouJizz",   "domains": [r"youjizz\.com"]},
+    "drtuber":    {"icon": "🩺", "name": "DrTuber",   "domains": [r"drtuber\.com"]},
+    "porntrex":   {"icon": "🦖", "name": "PornTrex",  "domains": [r"porntrex\.com"]},
+    "beeg":       {"icon": "🐝", "name": "Beeg",      "domains": [r"beeg\.com"]},
+    "hdzog":      {"icon": "🎯", "name": "HDZog",     "domains": [r"hdzog\.com"]},
+    "nuvid":      {"icon": "📱", "name": "NuVid",     "domains": [r"nuvid\.com"]},
+    "vporn":      {"icon": "🔮", "name": "VPorn",     "domains": [r"vporn\.com"]},
+    "4tube":      {"icon": "4️⃣", "name": "4Tube",     "domains": [r"4tube\.com"]},
+    "thumbzilla": {"icon": "👍", "name": "Thumbzilla","domains": [r"thumbzilla\.com"]},
+    "porndig":    {"icon": "⛏️", "name": "PornDig",   "domains": [r"porndig\.com"]},
+    "3movs":      {"icon": "3️⃣", "name": "3Movs",     "domains": [r"3movs\.com"]},
+    "myfreecams": {"icon": "📷", "name": "MyFreeCams","domains": [r"myfreecams\.com"]},
+    "livejasmin": {"icon": "🌹", "name": "LiveJasmin","domains": [r"livejasmin\.com"]},
+    "fansly":     {"icon": "💎", "name": "Fansly",    "domains": [r"fansly\.com"]},
+    "porn00":     {"icon": "0️⃣", "name": "Porn00",    "domains": [r"porn00\.org"]},
+    "pornone":    {"icon": "1️⃣", "name": "PornOne",   "domains": [r"pornone\.com"]},
+    "fux":        {"icon": "🔥", "name": "FUX",       "domains": [r"fux\.com"]},
 }
 
 ALL_DOMAINS = []
@@ -89,8 +124,10 @@ for s in SITES.values():
 URL_RE = re.compile(rf"https?://(?:[\w-]+\.)*(?:{'|'.join(ALL_DOMAINS)})/\S+")
 
 
-# Sites accessible to ALL users (free)
-FREE_SITES = {"xhamster", "instagram", "facebook"}
+# Sites accessible to ALL users (free) — social media + xhamster
+FREE_SITES = {"xhamster", "instagram", "facebook", "youtube", "tiktok", "twitter",
+              "reddit", "pinterest", "vimeo", "dailymotion", "twitch", "snapchat",
+              "threads", "linkedin", "tumblr", "bilibili", "likee"}
 
 def detect(url):
     for k, v in SITES.items():
@@ -363,7 +400,100 @@ DEFAULT_SETTINGS = {
     "notify_admin_dl": False,
     "dump_channels": [],
     "allowed_groups": [],
+    # ── New Feature Settings ──
+    "rate_limit_per_hour": 20,
+    "anti_spam_cooldown": 5,
+    "referral_vip_days": 7,
+    "multi_admins": [],
+    "daily_stats": True,
+    "auto_update_ytdlp": True,
+    "promo_codes": {},
+    "trial_vip_hours": 0,
+    "banned_domains": [],
+    "whitelisted_domains": [],
 }
+
+# ── Rate Limiting & Anti-spam ──
+RATE_LIMIT = {}  # {uid: [timestamp1, timestamp2, ...]}
+SPAM_TRACKER = {}  # {uid: last_request_time}
+
+def check_rate_limit(uid: int, limit: int = 0) -> bool:
+    """Returns True if user is within rate limit. False = rate limited."""
+    if is_admin(uid): return True
+    per_hour = limit or db["settings"].get("rate_limit_per_hour", 20)
+    if per_hour <= 0: return True
+    now = time.time()
+    uid_s = str(uid)
+    if uid_s not in RATE_LIMIT: RATE_LIMIT[uid_s] = []
+    RATE_LIMIT[uid_s] = [t for t in RATE_LIMIT[uid_s] if now - t < 3600]
+    if len(RATE_LIMIT[uid_s]) >= per_hour: return False
+    RATE_LIMIT[uid_s].append(now)
+    return True
+
+def check_spam(uid: int) -> bool:
+    """Returns True if OK. False = spamming."""
+    if is_admin(uid): return True
+    cooldown = db["settings"].get("anti_spam_cooldown", 5)
+    if cooldown <= 0: return True
+    now = time.time()
+    uid_s = str(uid)
+    last = SPAM_TRACKER.get(uid_s, 0)
+    if now - last < cooldown: return False
+    SPAM_TRACKER[uid_s] = now
+    return True
+
+def generate_referral_code(uid):
+    """Generate unique referral code for user."""
+    import hashlib
+    return hashlib.md5(f"{uid}:{BOT_TOKEN[:8]}".encode()).hexdigest()[:8].upper()
+
+def apply_referral(referrer_uid, new_uid):
+    """Grant VIP days to referrer when someone joins via their link."""
+    days = db["settings"].get("referral_vip_days", 7)
+    if days <= 0: return
+    u = db["users"].get(str(referrer_uid), {})
+    if not u: return
+    expires = u.get("vip_expires", "")
+    from datetime import timedelta
+    if expires and expires > datetime.now().isoformat():
+        base = datetime.fromisoformat(expires)
+    else:
+        base = datetime.now()
+    u["vip"] = True
+    u["vip_expires"] = (base + timedelta(days=days)).isoformat()
+    u.setdefault("referrals", []).append(str(new_uid))
+    db["users"][str(referrer_uid)] = u
+    save_data(db)
+
+def check_vip_expiry(uid):
+    """Check if VIP has expired, auto-remove if so."""
+    u = db["users"].get(str(uid), {})
+    if not u.get("vip"): return
+    expires = u.get("vip_expires", "")
+    if expires and datetime.now().isoformat() > expires:
+        u["vip"] = False
+        u["vip_expires"] = ""
+        save_data(db)
+
+def apply_promo(uid, code):
+    """Apply promo code. Returns (success, message)."""
+    promos = db["settings"].get("promo_codes", {})
+    if code not in promos: return False, "Invalid promo code."
+    promo = promos[code]
+    if promo.get("used", 0) >= promo.get("max_uses", 999): return False, "Code expired."
+    u = db["users"].get(str(uid), {})
+    if code in u.get("used_promos", []): return False, "Already used."
+    from datetime import timedelta
+    days = promo.get("vip_days", 7)
+    u["vip"] = True
+    exp = u.get("vip_expires", "")
+    base = datetime.fromisoformat(exp) if exp and exp > datetime.now().isoformat() else datetime.now()
+    u["vip_expires"] = (base + timedelta(days=days)).isoformat()
+    u.setdefault("used_promos", []).append(code)
+    db["users"][str(uid)] = u
+    promo["used"] = promo.get("used", 0) + 1
+    save_data(db)
+    return True, f"VIP granted for {days} days!"
 
 def load_data():
     if not DATA_FILE.exists():
@@ -452,7 +582,8 @@ def get_user(uid):
     return db["users"][uid_str]
 
 def is_admin(uid):
-    return str(uid) == str(ADMIN_ID)
+    if str(uid) == str(ADMIN_ID): return True
+    return str(uid) in [str(a) for a in db["settings"].get("multi_admins", [])]
 
 
 # ━━━ MIDDLEWARE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1295,6 +1426,23 @@ def get_about_menu():
 async def cmd_start(client, msg: Message):
     try:
         if not await enforce_force_channel(client, msg): return
+        
+        # Handle referral deep links: /start ref_XXXXXXXX
+        if msg.text and len(msg.text.split()) > 1:
+            param = msg.text.split()[1]
+            if param.startswith("ref_"):
+                ref_code = param[4:]
+                # Find referrer
+                for uid_s, u_data in db["users"].items():
+                    if generate_referral_code(uid_s) == ref_code and uid_s != str(msg.from_user.id):
+                        apply_referral(uid_s, msg.from_user.id)
+                        try: await bot.send_message(int(uid_s), f"🎉 Someone joined via your referral!\n+{db['settings'].get('referral_vip_days',7)} VIP days!", parse_mode=ParseMode.HTML)
+                        except: pass
+                        break
+        
+        # Check VIP expiry
+        check_vip_expiry(msg.from_user.id)
+        
         t, kb = get_start_menu()
         if BANNER.exists():
             await msg.reply_photo(str(BANNER), caption=t, parse_mode=ParseMode.HTML, reply_markup=kb)
@@ -1314,6 +1462,95 @@ async def cmd_settings(_, msg: Message):
 async def cmd_help(_, msg: Message):
     t, kb = get_help_menu()
     await msg.reply_text(t, parse_mode=ParseMode.HTML, reply_markup=kb)
+
+@bot.on_message(filters.command("referral") & user_filter)
+async def cmd_referral(_, msg: Message):
+    uid = msg.from_user.id
+    code = generate_referral_code(uid)
+    bot_username = "TURBOGRABONTG_BOT"
+    ref_link = f"https://t.me/{bot_username}?start=ref_{code}"
+    u = db["users"].get(str(uid), {})
+    refs = len(u.get("referrals", []))
+    await msg.reply_text(
+        f"<b>🔗 𝗬𝗼𝘂𝗿 𝗥𝗲𝗳𝗲𝗿𝗿𝗮𝗹 𝗟𝗶𝗻𝗸</b>\n\n"
+        f"<blockquote>"
+        f"Share this link with friends!\n"
+        f"Earn <b>{db['settings'].get('referral_vip_days',7)} VIP days</b> for each referral."
+        f"</blockquote>\n\n"
+        f"🔗 <code>{ref_link}</code>\n\n"
+        f"<blockquote>"
+        f"👥 Your Referrals: <b>{refs}</b>\n"
+        f"👑 VIP: {'✅ Active' if u.get('vip') else '❌ Inactive'}"
+        f"</blockquote>\n\n"
+        f"<i>━ 𝗕𝗼𝘁 𝗯𝘆 </i><a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>",
+        parse_mode=ParseMode.HTML, disable_web_page_preview=True
+    )
+
+@bot.on_message(filters.command("promo") & user_filter)
+async def cmd_promo(_, msg: Message):
+    if len(msg.text.split()) < 2:
+        await msg.reply_text("📝 Usage: <code>/promo CODE</code>", parse_mode=ParseMode.HTML); return
+    code = msg.text.split()[1].strip().upper()
+    ok, result = apply_promo(msg.from_user.id, code)
+    icon = "✅" if ok else "❌"
+    await msg.reply_text(f"{icon} {result}", parse_mode=ParseMode.HTML)
+
+@bot.on_message(filters.command("mystats") & user_filter)
+async def cmd_mystats(_, msg: Message):
+    uid = str(msg.from_user.id)
+    u = db["users"].get(uid, {})
+    check_vip_expiry(msg.from_user.id)
+    refs = len(u.get("referrals", []))
+    dls = u.get("downloads", 0)
+    vip = "✅ Active" if u.get("vip") else "❌ Inactive"
+    vip_exp = u.get("vip_expires", "—")
+    if vip_exp and vip_exp != "—": vip_exp = vip_exp[:10]
+    history = u.get("history", [])
+    await msg.reply_text(
+        f"<b>📊 𝗬𝗼𝘂𝗿 𝗦𝘁𝗮𝘁𝘀</b>\n\n"
+        f"<blockquote>"
+        f"👤 <b>ID:</b> <code>{uid}</code>\n"
+        f"📅 <b>Joined:</b> {u.get('joined','?')[:10]}\n"
+        f"📥 <b>Downloads:</b> {dls}\n"
+        f"👑 <b>VIP:</b> {vip}\n"
+        f"📅 <b>VIP Expires:</b> {vip_exp}\n"
+        f"👥 <b>Referrals:</b> {refs}\n"
+        f"📜 <b>History:</b> {len(history)} items"
+        f"</blockquote>\n\n"
+        f"<i>━ 𝗕𝗼𝘁 𝗯𝘆 </i><a href='https://t.me/IRONMAXPRO'>@𝗜𝗥𝗢𝗡𝗠𝗔𝗫𝗣𝗥𝗢</a>",
+        parse_mode=ParseMode.HTML, disable_web_page_preview=True
+    )
+
+@bot.on_message(filters.command("history") & user_filter)
+async def cmd_history(_, msg: Message):
+    uid = str(msg.from_user.id)
+    u = db["users"].get(uid, {})
+    history = u.get("history", [])[-10:]
+    if not history:
+        await msg.reply_text("📜 No download history yet."); return
+    lines = ""
+    for i, h in enumerate(reversed(history)):
+        lines += f"  {i+1}. {h.get('icon','🎬')} <b>{h.get('title','?')[:30]}</b>\n     <i>{h.get('time','?')[:16]} · {h.get('size','?')}</i>\n"
+    await msg.reply_text(
+        f"<b>📜 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱 𝗛𝗶𝘀𝘁𝗼𝗿𝘆</b>\n\n{lines}\n"
+        f"<i>Showing last {len(history)} downloads</i>",
+        parse_mode=ParseMode.HTML
+    )
+
+@bot.on_message(filters.command("updateytdlp") & user_filter)
+async def cmd_updateytdlp(_, msg: Message):
+    if not is_admin(msg.from_user.id): return
+    status = await msg.reply_text("🔄 <b>Updating yt-dlp...</b>", parse_mode=ParseMode.HTML)
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "pip", "install", "-U", "yt-dlp",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        result = stdout.decode()[-200:] if stdout else stderr.decode()[-200:]
+        await status.edit_text(f"✅ <b>yt-dlp updated!</b>\n<code>{result}</code>", parse_mode=ParseMode.HTML)
+    except Exception as e:
+        await status.edit_text(f"❌ <b>Update failed:</b>\n<code>{e}</code>", parse_mode=ParseMode.HTML)
 
 
 @bot.on_callback_query(user_filter)
@@ -1961,8 +2198,20 @@ async def on_cb(_, cb: CallbackQuery):
             try: await video_msg.copy(int(ch))
             except: pass
         
-        # Increment download counter
+        # Increment download counter + track history
         db["stats"]["total_dl"] = db["stats"].get("total_dl", 0) + 1
+        uid_s = str(cb.from_user.id)
+        if uid_s in db["users"]:
+            db["users"][uid_s]["downloads"] = db["users"][uid_s].get("downloads", 0) + 1
+            history_entry = {
+                "title": vid_title or "Unknown",
+                "icon": pi.get("icon", "🎬") if 'pi' in dir() else "🎬",
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "size": sz(fsize) if fsize else "?"
+            }
+            db["users"][uid_s].setdefault("history", []).append(history_entry)
+            # Keep only last 50 entries
+            db["users"][uid_s]["history"] = db["users"][uid_s]["history"][-50:]
         save_data(db)
 
         delay = db["users"][str(cb.from_user.id)].get("auto_delete", 60)
@@ -1994,6 +2243,28 @@ async def on_url(client, msg: Message):
     
     # Force channel check
     if not await enforce_force_channel(client, msg): return
+    
+    uid = msg.from_user.id
+    
+    # Anti-spam check
+    if not check_spam(uid):
+        await msg.reply_text("⏳ <b>Slow down!</b>\nPlease wait a few seconds between requests.", parse_mode=ParseMode.HTML)
+        return
+    
+    # Rate limit check
+    if not check_rate_limit(uid):
+        limit = db["settings"].get("rate_limit_per_hour", 20)
+        await msg.reply_text(
+            f"<b>⚠️ 𝗥𝗮𝘁𝗲 𝗟𝗶𝗺𝗶𝘁 𝗥𝗲𝗮𝗰𝗵𝗲𝗱</b>\n\n"
+            f"<blockquote>You've exceeded <b>{limit}</b> downloads per hour.\n"
+            f"Please wait and try again later.</blockquote>\n\n"
+            f"<i>💡 VIP users get higher limits!</i>",
+            parse_mode=ParseMode.HTML
+        )
+        return
+    
+    # VIP expiry check
+    check_vip_expiry(uid)
     
     # Try to delete user's message
     try: await msg.delete()
@@ -2209,7 +2480,51 @@ if __name__ == "__main__":
                         logger.info(f"[KEEP-ALIVE] Ping {resp.status}")
             except Exception as e:
                 logger.warning(f"[KEEP-ALIVE] Ping failed: {e}")
-    
+    async def daily_stats_task():
+        """Send daily stats to admin at midnight."""
+        while True:
+            now = datetime.now()
+            # Wait until next midnight
+            tomorrow = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            from datetime import timedelta as td
+            if tomorrow <= now: tomorrow += td(days=1)
+            await asyncio.sleep((tomorrow - now).total_seconds())
+            if db["settings"].get("daily_stats"):
+                try:
+                    # Count today's downloads
+                    total = db["stats"].get("total_dl", 0)
+                    users = len(db["users"])
+                    vip_count = sum(1 for u in db["users"].values() if u.get("vip"))
+                    await bot.send_message(
+                        int(ADMIN_ID),
+                        f"📊 <b>𝗗𝗮𝗶𝗹𝘆 𝗥𝗲𝗽𝗼𝗿𝘁</b> — {now.strftime('%Y-%m-%d')}\n\n"
+                        f"<blockquote>"
+                        f"👥 Total Users: <b>{users}</b>\n"
+                        f"👑 VIP Users: <b>{vip_count}</b>\n"
+                        f"📥 Total Downloads: <b>{total}</b>\n"
+                        f"🖥 CPU: {psutil.cpu_percent()}%\n"
+                        f"💾 RAM: {psutil.virtual_memory().percent}%"
+                        f"</blockquote>",
+                        parse_mode=ParseMode.HTML
+                    )
+                    # Auto cloud backup at midnight
+                    await cloud_backup()
+                except: pass
+
+    async def auto_ytdlp_update():
+        """Auto-update yt-dlp every 24 hours."""
+        while True:
+            await asyncio.sleep(86400)  # 24 hours
+            if db["settings"].get("auto_update_ytdlp"):
+                try:
+                    proc = await asyncio.create_subprocess_exec(
+                        "pip", "install", "-U", "yt-dlp",
+                        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                    )
+                    await proc.communicate()
+                    logger.info("[AUTO-UPDATE] yt-dlp updated successfully")
+                except: pass
+
     async def main():
         # Set global asyncio error handler — bot never dies
         loop = asyncio.get_event_loop()
@@ -2217,8 +2532,10 @@ if __name__ == "__main__":
         
         await start_webserver()
         
-        # Start self-ping to keep Render alive
+        # Start background tasks
         asyncio.create_task(keep_alive())
+        asyncio.create_task(daily_stats_task())
+        asyncio.create_task(auto_ytdlp_update())
         
         # Infinite retry loop — bot NEVER stops on Render
         while True:
